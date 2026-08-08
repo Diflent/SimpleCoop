@@ -10,6 +10,8 @@ namespace SimpleCoop
     public class SimpleCoop : BaseUnityPlugin
     {
         internal static new ManualLogSource Logger = null!;
+        public static SimpleCoop Instance { get; private set; } = null!;
+        public NetworkManager? Net => _net;
         private Harmony? _harmony;
         private NetworkManager? _net;
 
@@ -84,6 +86,10 @@ namespace SimpleCoop
             else if (UnityEngine.Input.GetKeyDown(KeyCode.F8))
             {
                 _net?.SendChat($"Test from {_net?.Role} at {Time.time:F1}");
+            }
+            else if (UnityEngine.Input.GetKeyDown(KeyCode.F9))
+            {
+                _net?.SendCommand("TEST_ACTION");
             }
         }
 

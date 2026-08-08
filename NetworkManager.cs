@@ -14,6 +14,7 @@ namespace SimpleCoop
             Client
         }
 
+        public static NetworkManager? Current { get; private set; }
         public NetRole Role { get; private set; } = NetRole.None;
         public bool IsRunning => _netManager != null && _netManager.IsRunning;
 
@@ -74,6 +75,7 @@ namespace SimpleCoop
             if (_netManager.Start(_hostPort))
             {
                 Role = NetRole.Host;
+                Current = this;
                 _log.LogInfo($"[Net] Host started on port {_hostPort}");
             }
             else
@@ -131,6 +133,7 @@ namespace SimpleCoop
             if (peer != null)
             {
                 Role = NetRole.Client;
+                Current = this;
                 _log.LogInfo($"[Net] Connecting to {hostIp}:{_hostPort} (local port {_clientPort})...");
             }
             else
@@ -148,8 +151,8 @@ namespace SimpleCoop
                 _netManager = null;
             }
 
-            _listener = null;
             Role = NetRole.None;
+            Current = null;
             _log.LogInfo("[Net] Stopped");
         }
 
@@ -189,6 +192,29 @@ namespace SimpleCoop
                     string msg = reader.GetString(256);
                     _log.LogInfo($"[Net] From {peer.EndPoint}: {msg}");
                 }
+                else if (type == "CMD")
+                {
+                    string cmd = reader.GetString(256);
+                    _log.LogInfo($"[Net] CMD from {peer.EndPoint}: {cmd}");
+
+                    if (Role == NetRole.Host)
+                    {
+                        //заглушка
+                    }
+                }
+                else if (type == "CMD_MOVE")
+                {
+                    string crewName = reader.GetString(128);
+                    float x = reader.GetFloat();
+                    float y = reader.GetFloat();
+
+                    _log.LogInfo($"[Net] CMD_MOVE from {peer.EndPoint}: {crewName} ({x:F1},{y:F1})");
+
+                    if (Role == NetRole.Host)
+                    {
+                        OrderSync.ApplyMoveOrder(crewName, x, y);
+                    }
+                }
             }
             catch (Exception e)
             {
@@ -198,6 +224,23 @@ namespace SimpleCoop
             {
                 reader.Recycle();
             }
+        }
+        public void SendCommand(string command)
+        {
+            if (!IsRunning) return;
+
+            _writer.Reset();
+            _writer.Put("CMD");
+            _writer.Put(command);
+
+            _netManager.SendToAll(_writer, DeliveryMethod.ReliableOrdered);
+            _log.LogInfo($"[Net] CMD sent: {command}");
+        }
+
+        public void SendRaw(NetDataWriter writer)
+        {
+            if (!IsRunning || _netManager == null) return;
+            _netManager.SendToAll(writer, DeliveryMethod.ReliableOrdered);
         }
     }
 }
