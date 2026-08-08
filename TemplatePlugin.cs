@@ -2,13 +2,13 @@ using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
 
-namespace ModularUpgrades.TemplateExample
+namespace SimpleCoop
 {
     /// <summary>
     /// Template mod plugin - copy this to create new mods
     /// </summary>
     [BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
-    public class TemplatePlugin : BaseUnityPlugin
+    public class SimpleCoop : BaseUnityPlugin
     {
         internal static new ManualLogSource Logger;
         private Harmony _harmony;
@@ -20,7 +20,7 @@ namespace ModularUpgrades.TemplateExample
 
             // Apply Harmony patches
             _harmony = new Harmony(PluginInfo.PLUGIN_GUID);
-            _harmony.PatchAll(typeof(TemplatePlugin).Assembly);
+            _harmony.PatchAll(typeof(SimpleCoop).Assembly);
             
             Logger.LogInfo("Harmony patches applied successfully!");
         }
@@ -33,9 +33,9 @@ namespace ModularUpgrades.TemplateExample
 
     public static class PluginInfo
     {
-        public const string PLUGIN_GUID = "com.ostranauts.template";
-        public const string PLUGIN_NAME = "Template Mod";
-        public const string PLUGIN_VERSION = "1.0.0";
+        public const string PLUGIN_GUID = "com.Diflent.ostranauts.SimpleCoop";
+        public const string PLUGIN_NAME = "SimpleCoop";
+        public const string PLUGIN_VERSION = "0.0.1";
     }
 }
 
