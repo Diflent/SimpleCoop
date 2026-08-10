@@ -56,13 +56,13 @@ namespace SimpleCoop
 
             _listener.PeerConnectedEvent += peer =>
             {
-                _log.LogInfo($"[Net] Client connected: {peer.EndPoint}");
+                GameLog.Info($"[Net] Client connected: {peer.EndPoint}");
                 SendToPeer(peer, "Welcome to SimpleCoop!");
             };
 
             _listener.PeerDisconnectedEvent += (peer, info) =>
             {
-                _log.LogInfo($"[Net] Client disconnected: {peer.EndPoint} ({info.Reason})");
+                GameLog.Info($"[Net] Client disconnected: {peer.EndPoint} ({info.Reason})");
             };
 
             _listener.NetworkReceiveEvent += OnReceive;
@@ -76,7 +76,7 @@ namespace SimpleCoop
             {
                 Role = NetRole.Host;
                 Current = this;
-                _log.LogInfo($"[Net] Host started on port {_hostPort}");
+                GameLog.Info($"[Net] Host started on port {_hostPort}");
             }
             else
             {
@@ -104,13 +104,13 @@ namespace SimpleCoop
 
             _listener.PeerConnectedEvent += peer =>
             {
-                _log.LogInfo($"[Net] Connected to host: {peer.EndPoint}");
+                GameLog.Info($"[Net] Connected to host: {peer.EndPoint}");
                 SendToPeer(peer, "Hello from client!");
             };
 
             _listener.PeerDisconnectedEvent += (peer, info) =>
             {
-                _log.LogInfo($"[Net] Disconnected from host: {info.Reason}");
+                GameLog.Info($"[Net] Disconnected from host: {info.Reason}");
                 Role = NetRole.None;
             };
 
@@ -134,11 +134,11 @@ namespace SimpleCoop
             {
                 Role = NetRole.Client;
                 Current = this;
-                _log.LogInfo($"[Net] Connecting to {hostIp}:{_hostPort} (local port {_clientPort})...");
+                GameLog.Info($"[Net] Connecting to {hostIp}:{_hostPort} (local port {_clientPort})...");
             }
             else
             {
-                _log.LogError("[Net] Connect() returned null");
+                GameLog.Info("[Net] Connect() returned null");
                 Stop();
             }
         }
@@ -153,7 +153,7 @@ namespace SimpleCoop
 
             Role = NetRole.None;
             Current = null;
-            _log.LogInfo("[Net] Stopped");
+            GameLog.Info("[Net] Stopped");
         }
 
         public void Update()
@@ -213,6 +213,13 @@ namespace SimpleCoop
                     if (Role == NetRole.Host)
                     {
                         OrderSync.ApplyMoveOrder(crewName, x, y);
+                    }
+                }
+                else if (type == "SNAP_POS")
+                {
+                    if (Role == NetRole.Client)
+                    {
+                        PositionSync.ApplySnapshot(reader);
                     }
                 }
             }

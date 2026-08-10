@@ -77,6 +77,7 @@ namespace SimpleCoop
         private void Update()
         {
             _net?.Update();
+            PositionSync.Update(Time.deltaTime);
 
             if (UnityEngine.Input.GetKeyDown(KeyCode.F5))
             {
