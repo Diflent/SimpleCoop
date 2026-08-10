@@ -5,6 +5,18 @@
     {
       "AbsoluteMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|c:\\simplecoop\\gamelog.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|solutionrelative:gamelog.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|c:\\simplecoop\\networkmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|solutionrelative:networkmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|c:\\simplecoop\\ordersync.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|solutionrelative:ordersync.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|c:\\simplecoop\\simplecoop.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|solutionrelative:simplecoop.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -14,8 +26,51 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 4,
           "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{6324226f-61b6-4f28-92ee-18d4b5fe1e48}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "SimpleCoop.cs",
+              "DocumentMoniker": "C:\\SimpleCoop\\SimpleCoop.cs",
+              "RelativeDocumentMoniker": "SimpleCoop.cs",
+              "ToolTip": "C:\\SimpleCoop\\SimpleCoop.cs",
+              "RelativeToolTip": "SimpleCoop.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-10T16:08:23.421Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "OrderSync.cs",
+              "DocumentMoniker": "C:\\SimpleCoop\\OrderSync.cs",
+              "RelativeDocumentMoniker": "OrderSync.cs",
+              "ToolTip": "C:\\SimpleCoop\\OrderSync.cs",
+              "RelativeToolTip": "OrderSync.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-10T16:08:22.563Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "NetworkManager.cs",
+              "DocumentMoniker": "C:\\SimpleCoop\\NetworkManager.cs",
+              "RelativeDocumentMoniker": "NetworkManager.cs",
+              "ToolTip": "C:\\SimpleCoop\\NetworkManager.cs",
+              "RelativeToolTip": "NetworkManager.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-10T16:08:21.566Z",
+              "EditorCaption": ""
+            },
             {
               "$type": "Document",
               "DocumentIndex": 0,
@@ -24,9 +79,9 @@
               "RelativeDocumentMoniker": "GameLog.cs",
               "ToolTip": "C:\\SimpleCoop\\GameLog.cs",
               "RelativeToolTip": "GameLog.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAACsAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-10T10:51:17.785Z",
+              "WhenOpened": "2026-08-10T16:08:20.603Z",
               "EditorCaption": ""
             }
           ]

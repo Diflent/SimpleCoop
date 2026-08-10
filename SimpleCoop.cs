@@ -1,4 +1,4 @@
-using BepInEx;
+п»їusing BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
@@ -12,10 +12,10 @@ namespace SimpleCoop
         internal static new ManualLogSource Logger = null!;
         public static SimpleCoop Instance { get; private set; } = null!;
         public NetworkManager? Net => _net;
+
         private Harmony? _harmony;
         private NetworkManager? _net;
 
-        // Конфиг
         private ConfigEntry<string> _clientIp = null!;
         private ConfigEntry<int> _hostPort = null!;
         private ConfigEntry<int> _clientPort = null!;
@@ -23,48 +23,47 @@ namespace SimpleCoop
 
         private void Awake()
         {
-            Logger = base.Logger;
-            Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
+            Instance = this; // в†ђ РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ
 
-            // --- Конфиг ---
+            Logger = base.Logger;
+            GameLog.Info($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
+
             _clientIp = Config.Bind(
                 "Network",
                 "HostIP",
                 "26.0.0.1",
-                "IP хоста из Radmin VPN (для клиента)");
+                "IP С…РѕСЃС‚Р° РёР· Radmin VPN (РґР»СЏ РєР»РёРµРЅС‚Р°)");
 
             _hostPort = Config.Bind(
                 "Network",
                 "HostPort",
                 7777,
-                "Порт сервера (хост)");
+                "РџРѕСЂС‚ СЃРµСЂРІРµСЂР° (С…РѕСЃС‚)");
 
             _clientPort = Config.Bind(
                 "Network",
                 "ClientPort",
                 7779,
-                "Локальный порт клиента");
+                "Р›РѕРєР°Р»СЊРЅС‹Р№ РїРѕСЂС‚ РєР»РёРµРЅС‚Р°");
 
             _connectionKey = Config.Bind(
                 "Network",
                 "ConnectionKey",
                 "SimpleCoopKey",
-                "Ключ подключения (должен совпадать у хоста и клиента)");
+                "РљР»СЋС‡ РїРѕРґРєР»СЋС‡РµРЅРёСЏ (РґРѕР»Р¶РµРЅ СЃРѕРІРїР°РґР°С‚СЊ Сѓ С…РѕСЃС‚Р° Рё РєР»РёРµРЅС‚Р°)");
 
-            // --- Harmony ---
             _harmony = new Harmony(PluginInfo.PLUGIN_GUID);
             _harmony.PatchAll(typeof(SimpleCoop).Assembly);
 
-            // --- Сеть ---
             _net = new NetworkManager(
                 Logger,
                 _hostPort.Value,
                 _clientPort.Value,
                 _connectionKey.Value);
 
-            Logger.LogInfo("Harmony patches applied successfully!");
-            Logger.LogInfo("[SimpleCoop] Keys: F5 = Host | F6 = Client | F7 = Stop | F8 = Send test message");
-            Logger.LogInfo($"[SimpleCoop] Config: HostIP={_clientIp.Value}, HostPort={_hostPort.Value}, ClientPort={_clientPort.Value}");
+            GameLog.Info("Harmony patches applied successfully!");
+            GameLog.Info("[SimpleCoop] Keys: F5 = Host | F6 = Client | F7 = Stop | F8 = Chat | F9 = CMD");
+            GameLog.Info($"[SimpleCoop] Config: HostIP={_clientIp.Value}, HostPort={_hostPort.Value}, ClientPort={_clientPort.Value}");
         }
 
         private void Update()

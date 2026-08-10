@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace SimpleCoop
 {
@@ -22,7 +21,7 @@ namespace SimpleCoop
             if (ConsoleToGUI.instance != null)
                 ConsoleToGUI.instance.Log(
                     "<color=yellow><b>[Warning]</b></color>: [SimpleCoop] " + msg,
-                    "",
+                    string.Empty,
                     LogType.Warning);
             else
                 Debug.LogWarning("[SimpleCoop] " + msg);
@@ -35,7 +34,7 @@ namespace SimpleCoop
             if (ConsoleToGUI.instance != null)
                 ConsoleToGUI.instance.Log(
                     "<color=red><b>[Error]</b></color>: [SimpleCoop] " + msg,
-                    "",
+                    string.Empty,
                     LogType.Error);
             else
                 Debug.LogError("[SimpleCoop] " + msg);

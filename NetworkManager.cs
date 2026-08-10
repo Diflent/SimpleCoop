@@ -39,7 +39,7 @@ namespace SimpleCoop
         {
             if (IsRunning)
             {
-                _log.LogWarning("[Net] Already running!");
+                GameLog.Warn("[Net] Already running!");
                 return;
             }
 
@@ -56,31 +56,31 @@ namespace SimpleCoop
 
             _listener.PeerConnectedEvent += peer =>
             {
-                _log.LogInfo($"[Net] Client connected: {peer.EndPoint}");
+                GameLog.Info($"[Net] Client connected: {peer.EndPoint}");
                 SendToPeer(peer, "Welcome to SimpleCoop!");
             };
 
             _listener.PeerDisconnectedEvent += (peer, info) =>
             {
-                _log.LogInfo($"[Net] Client disconnected: {peer.EndPoint} ({info.Reason})");
+                GameLog.Info($"[Net] Client disconnected: {peer.EndPoint} ({info.Reason})");
             };
 
             _listener.NetworkReceiveEvent += OnReceive;
 
             _listener.NetworkErrorEvent += (endPoint, error) =>
             {
-                _log.LogError($"[Net] Error {endPoint}: {error}");
+                GameLog.Error($"[Net] Error {endPoint}: {error}");
             };
 
             if (_netManager.Start(_hostPort))
             {
                 Role = NetRole.Host;
                 Current = this;
-                _log.LogInfo($"[Net] Host started on port {_hostPort}");
+                GameLog.Info($"[Net] Host started on port {_hostPort}");
             }
             else
             {
-                _log.LogError($"[Net] Failed to start host on port {_hostPort}!");
+                GameLog.Error($"[Net] Failed to start host on port {_hostPort}!");
                 Stop();
             }
         }
@@ -89,13 +89,13 @@ namespace SimpleCoop
         {
             if (IsRunning)
             {
-                _log.LogWarning("[Net] Already running!");
+                GameLog.Warn("[Net] Already running!");
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(hostIp))
             {
-                _log.LogError("[Net] IP is empty!");
+                GameLog.Error("[Net] IP is empty!");
                 return;
             }
 
@@ -104,13 +104,13 @@ namespace SimpleCoop
 
             _listener.PeerConnectedEvent += peer =>
             {
-                _log.LogInfo($"[Net] Connected to host: {peer.EndPoint}");
+                GameLog.Info($"[Net] Connected to host: {peer.EndPoint}");
                 SendToPeer(peer, "Hello from client!");
             };
 
             _listener.PeerDisconnectedEvent += (peer, info) =>
             {
-                _log.LogInfo($"[Net] Disconnected from host: {info.Reason}");
+                GameLog.Info($"[Net] Disconnected from host: {info.Reason}");
                 Role = NetRole.None;
             };
 
@@ -118,12 +118,12 @@ namespace SimpleCoop
 
             _listener.NetworkErrorEvent += (endPoint, error) =>
             {
-                _log.LogError($"[Net] Error {endPoint}: {error}");
+                GameLog.Error($"[Net] Error {endPoint}: {error}");
             };
 
             if (!_netManager.Start(_clientPort))
             {
-                _log.LogError($"[Net] Failed to bind client port {_clientPort}!");
+                GameLog.Error($"[Net] Failed to bind client port {_clientPort}!");
                 Stop();
                 return;
             }
@@ -134,11 +134,11 @@ namespace SimpleCoop
             {
                 Role = NetRole.Client;
                 Current = this;
-                _log.LogInfo($"[Net] Connecting to {hostIp}:{_hostPort} (local port {_clientPort})...");
+                GameLog.Info($"[Net] Connecting to {hostIp}:{_hostPort} (local port {_clientPort})...");
             }
             else
             {
-                _log.LogError("[Net] Connect() returned null");
+                GameLog.Error("[Net] Connect() returned null");
                 Stop();
             }
         }
@@ -151,9 +151,10 @@ namespace SimpleCoop
                 _netManager = null;
             }
 
+            _listener = null;
             Role = NetRole.None;
             Current = null;
-            _log.LogInfo("[Net] Stopped");
+            GameLog.Info("[Net] Stopped");
         }
 
         public void Update()
@@ -170,7 +171,7 @@ namespace SimpleCoop
             _writer.Put(message);
 
             _netManager.SendToAll(_writer, DeliveryMethod.ReliableOrdered);
-            _log.LogInfo($"[Net] Sent: {message}");
+            GameLog.Info($"[Net] Sent: {message}");
         }
 
         private void SendToPeer(NetPeer peer, string message)
@@ -190,16 +191,16 @@ namespace SimpleCoop
                 if (type == "CHAT")
                 {
                     string msg = reader.GetString(256);
-                    _log.LogInfo($"[Net] From {peer.EndPoint}: {msg}");
+                    GameLog.Info($"[Net] From {peer.EndPoint}: {msg}");
                 }
                 else if (type == "CMD")
                 {
                     string cmd = reader.GetString(256);
-                    _log.LogInfo($"[Net] CMD from {peer.EndPoint}: {cmd}");
+                    GameLog.Info($"[Net] CMD from {peer.EndPoint}: {cmd}");
 
                     if (Role == NetRole.Host)
                     {
-                        //заглушка
+                        // заглушка
                     }
                 }
                 else if (type == "CMD_MOVE")
@@ -208,7 +209,7 @@ namespace SimpleCoop
                     float x = reader.GetFloat();
                     float y = reader.GetFloat();
 
-                    _log.LogInfo($"[Net] CMD_MOVE from {peer.EndPoint}: {crewName} ({x:F1},{y:F1})");
+                    GameLog.Info($"[Net] CMD_MOVE from {peer.EndPoint}: {crewName} ({x:F1},{y:F1})");
 
                     if (Role == NetRole.Host)
                     {
@@ -218,13 +219,14 @@ namespace SimpleCoop
             }
             catch (Exception e)
             {
-                _log.LogError($"[Net] Receive error: {e.Message}");
+                GameLog.Error($"[Net] Receive error: {e.Message}");
             }
             finally
             {
                 reader.Recycle();
             }
         }
+
         public void SendCommand(string command)
         {
             if (!IsRunning) return;
@@ -234,7 +236,7 @@ namespace SimpleCoop
             _writer.Put(command);
 
             _netManager.SendToAll(_writer, DeliveryMethod.ReliableOrdered);
-            _log.LogInfo($"[Net] CMD sent: {command}");
+            GameLog.Info($"[Net] CMD sent: {command}");
         }
 
         public void SendRaw(NetDataWriter writer)

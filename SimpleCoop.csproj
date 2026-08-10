@@ -12,6 +12,7 @@
     
 <!-- Ostranauts installation directory - tries common Steam locations -->
     <!-- Ostranauts installation directory -->
+    <OstranautsPath Condition="'$(OstranautsPath)' == '' AND Exists('E:\Ostranauts')">E:\Ostranauts</OstranautsPath>
     <OstranautsPath Condition="'$(OstranautsPath)' == '' AND Exists('E:\SteamLibrary\steamapps\common\Ostranauts')">E:\SteamLibrary\steamapps\common\Ostranauts</OstranautsPath>
     <OstranautsPath Condition="'$(OstranautsPath)' == '' AND Exists('D:\Steam\steamapps\common\Ostranauts')">D:\Steam\steamapps\common\Ostranauts</OstranautsPath>
     <OstranautsPath Condition="'$(OstranautsPath)' == '' AND Exists('C:\Steam\steamapps\common\Ostranauts')">C:\Steam\steamapps\common\Ostranauts</OstranautsPath>

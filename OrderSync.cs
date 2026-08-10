@@ -1,7 +1,5 @@
 ﻿using HarmonyLib;
-using LiteNetLib;
 using LiteNetLib.Utils;
-using UnityEngine;
 
 namespace SimpleCoop
 {
@@ -25,7 +23,7 @@ namespace SimpleCoop
             writer.Put(y);
 
             net.SendRaw(writer);
-            SimpleCoop.Logger.LogInfo($"[OrderSync] Sent MOVE for '{crew?.strName}' → ({x:F1}, {y:F1})");
+            GameLog.Info($"[OrderSync] Sent MOVE for '{crew?.strName}' → ({x:F1}, {y:F1})");
         }
 
         public static void ApplyMoveOrder(string crewName, float x, float y)
@@ -33,13 +31,13 @@ namespace SimpleCoop
             CondOwner crew = FindCrew(crewName);
             if (crew == null)
             {
-                SimpleCoop.Logger.LogWarning($"[OrderSync] Crew not found: {crewName}");
+                GameLog.Warn($"[OrderSync] Crew not found: {crewName}");
                 return;
             }
 
             if (crew.ship == null)
             {
-                SimpleCoop.Logger.LogWarning($"[OrderSync] Crew has no ship: {crewName}");
+                GameLog.Warn($"[OrderSync] Crew has no ship: {crewName}");
                 return;
             }
 
@@ -49,7 +47,7 @@ namespace SimpleCoop
             try
             {
                 bool ok = crew.AIIssueOrder(null, null, true, tile, x, y);
-                SimpleCoop.Logger.LogInfo($"[OrderSync] Applied MOVE '{crewName}' → ({x:F1}, {y:F1}) ok={ok}");
+                GameLog.Info($"[OrderSync] Applied MOVE '{crewName}' → ({x:F1}, {y:F1}) ok={ok}");
             }
             finally
             {
@@ -70,7 +68,7 @@ namespace SimpleCoop
                 // Если в CrewSim есть список — доработать позже
             }
 
-            return selected; // временно: если имя не совпало, всё равно пробуем selected
+            return selected;
         }
     }
 
@@ -90,12 +88,12 @@ namespace SimpleCoop
             float fPosY)
         {
             var net = NetworkManager.Current;
-            string role = net != null ? net.Role.ToString() : "null";
 
+            // Только BepInEx — иначе спам в Debug Console при каждом шаге
             SimpleCoop.Logger.LogInfo(
-                $"[OrderSync] AIIssueOrder called | role={role} | crew={__instance?.strName} | " +
+                $"[OrderSync] AIIssueOrder | role={net?.Role} | crew={__instance?.strName} | " +
                 $"playerOrdered={bPlayerOrdered} | target={coTarget?.strName} | int={objInt?.strName} | " +
-                $"pos=({fPosX:F1},{fPosY:F1}) | applyingRemote={OrderSync.ApplyingRemoteOrder}");
+                $"pos=({fPosX:F1},{fPosY:F1}) | remote={OrderSync.ApplyingRemoteOrder}");
 
             if (OrderSync.ApplyingRemoteOrder)
                 return true;
@@ -111,10 +109,10 @@ namespace SimpleCoop
                 if (coTarget == null && objInt == null)
                 {
                     OrderSync.SendMoveOrder(__instance, fPosX, fPosY);
-                    return false; // блок локального выполнения
+                    return false;
                 }
 
-                SimpleCoop.Logger.LogInfo($"[OrderSync] Non-move order, blocked on client: {objInt?.strName}");
+                GameLog.Info($"[OrderSync] Non-move order blocked on client: {objInt?.strName}");
                 return false;
             }
 
