@@ -170,7 +170,7 @@ namespace SimpleCoop
             _writer.Put(message);
 
             _netManager.SendToAll(_writer, DeliveryMethod.ReliableOrdered);
-            _log.LogInfo($"[Net] Sent: {message}");
+            GameLog.Info($"[Net] Sent: {message}");
         }
 
         private void SendToPeer(NetPeer peer, string message)
@@ -190,12 +190,12 @@ namespace SimpleCoop
                 if (type == "CHAT")
                 {
                     string msg = reader.GetString(256);
-                    _log.LogInfo($"[Net] From {peer.EndPoint}: {msg}");
+                    GameLog.Info($"[Net] From {peer.EndPoint}: {msg}");
                 }
                 else if (type == "CMD")
                 {
                     string cmd = reader.GetString(256);
-                    _log.LogInfo($"[Net] CMD from {peer.EndPoint}: {cmd}");
+                    GameLog.Info($"[Net] CMD from {peer.EndPoint}: {cmd}");
 
                     if (Role == NetRole.Host)
                     {
@@ -208,7 +208,7 @@ namespace SimpleCoop
                     float x = reader.GetFloat();
                     float y = reader.GetFloat();
 
-                    _log.LogInfo($"[Net] CMD_MOVE from {peer.EndPoint}: {crewName} ({x:F1},{y:F1})");
+                    GameLog.Info($"[Net] CMD_MOVE from {peer.EndPoint}: {crewName} ({x:F1},{y:F1})");
 
                     if (Role == NetRole.Host)
                     {

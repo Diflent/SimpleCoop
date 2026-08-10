@@ -65,6 +65,13 @@ namespace SimpleCoop
             Logger.LogInfo("Harmony patches applied successfully!");
             Logger.LogInfo("[SimpleCoop] Keys: F5 = Host | F6 = Client | F7 = Stop | F8 = Send test message");
             Logger.LogInfo($"[SimpleCoop] Config: HostIP={_clientIp.Value}, HostPort={_hostPort.Value}, ClientPort={_clientPort.Value}");
+
+            // UI оверлей мода
+            var go = new GameObject("SimpleCoopOverlay");
+            DontDestroyOnLoad(go);
+            go.AddComponent<ModOverlay>();
+
+            GameLog.Info("Overlay ready (F10 — hide/show)");
         }
 
         private void Update()
