@@ -1,22 +1,10 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "E:\\SimpleCoop\\",
+  "WorkspaceRootPath": "C:\\SimpleCoop\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|e:\\simplecoop\\ordersync.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|solutionrelative:ordersync.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|e:\\simplecoop\\networkmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|solutionrelative:networkmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|e:\\simplecoop\\simplecoop.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|solutionrelative:simplecoop.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|e:\\simplecoop\\simplecoop.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
-      "RelativeMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|solutionrelative:simplecoop.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+      "AbsoluteMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|c:\\simplecoop\\gamelog.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|solutionrelative:gamelog.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -31,53 +19,14 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "OrderSync.cs",
-              "DocumentMoniker": "E:\\SimpleCoop\\OrderSync.cs",
-              "RelativeDocumentMoniker": "OrderSync.cs",
-              "ToolTip": "E:\\SimpleCoop\\OrderSync.cs*",
-              "RelativeToolTip": "OrderSync.cs*",
-              "ViewState": "AgIAADcAAAAAAAAAAAAUwFwAAABFAAAAAAAAAA==",
+              "Title": "GameLog.cs",
+              "DocumentMoniker": "C:\\SimpleCoop\\GameLog.cs",
+              "RelativeDocumentMoniker": "GameLog.cs",
+              "ToolTip": "C:\\SimpleCoop\\GameLog.cs",
+              "RelativeToolTip": "GameLog.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACsAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-08T18:56:18.297Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "SimpleCoop.csproj",
-              "DocumentMoniker": "E:\\SimpleCoop\\SimpleCoop.csproj",
-              "RelativeDocumentMoniker": "SimpleCoop.csproj",
-              "ToolTip": "E:\\SimpleCoop\\SimpleCoop.csproj",
-              "RelativeToolTip": "SimpleCoop.csproj",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2026-08-08T12:43:33.354Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "NetworkManager.cs",
-              "DocumentMoniker": "E:\\SimpleCoop\\NetworkManager.cs",
-              "RelativeDocumentMoniker": "NetworkManager.cs",
-              "ToolTip": "E:\\SimpleCoop\\NetworkManager.cs*",
-              "RelativeToolTip": "NetworkManager.cs*",
-              "ViewState": "AgIAAKoAAAAAAAAAAAAiwNgAAAARAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-08T12:43:39.933Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "SimpleCoop.cs",
-              "DocumentMoniker": "E:\\SimpleCoop\\SimpleCoop.cs",
-              "RelativeDocumentMoniker": "SimpleCoop.cs",
-              "ToolTip": "E:\\SimpleCoop\\SimpleCoop.cs",
-              "RelativeToolTip": "SimpleCoop.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-08T12:43:41.227Z",
+              "WhenOpened": "2026-08-10T10:51:17.785Z",
               "EditorCaption": ""
             }
           ]
