@@ -79,6 +79,9 @@ namespace SimpleCoop
             _net?.Update();
             PositionSync.Update(Time.deltaTime);
 
+            if (NetworkManager.Current?.Role == NetworkManager.NetRole.Host)
+                PositionSync.Update(Time.deltaTime);
+
             if (UnityEngine.Input.GetKeyDown(KeyCode.F5))
             {
                 _net?.StartHost();
@@ -101,6 +104,11 @@ namespace SimpleCoop
             }
         }
 
+        private void LateUpdate()
+        {
+            if (NetworkManager.Current?.Role == NetworkManager.NetRole.Client)
+                PositionSync.Update(Time.deltaTime);
+        }
         private void OnDestroy()
         {
             _net?.Stop();

@@ -121,4 +121,18 @@ namespace SimpleCoop
             return true;
         }
     }
+
+    [HarmonyPatch(typeof(CondOwner), nameof(CondOwner.RefreshAnim))]
+    public static class Patch_RefreshAnim
+    {
+        static void Postfix(CondOwner __instance)
+        {
+            var net = NetworkManager.Current;
+            if (net == null || net.Role != NetworkManager.NetRole.Client)
+                return;
+
+            if (PositionSync.IsMoving(__instance))
+                PositionSync.ForceWalkAnim(__instance);
+        }
+    }
 }
