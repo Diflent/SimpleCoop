@@ -215,6 +215,19 @@ namespace SimpleCoop
                         OrderSync.ApplyMoveOrder(crewName, x, y);
                     }
                 }
+                else if (type == "CMD_ACT")
+                {
+                    string crewName = reader.GetString(128);
+                    string targetName = reader.GetString(128);
+                    string interactionName = reader.GetString(128);
+                    float x = reader.GetFloat();
+                    float y = reader.GetFloat();
+
+                    GameLog.Info($"[Net] CMD_ACT {crewName} → {interactionName} on {targetName}");
+
+                    if (Role == NetRole.Host)
+                        OrderSync.ApplyActionOrder(crewName, targetName, interactionName, x, y);
+                }
                 else if (type == "SNAP_POS")
                 {
                     if (Role == NetRole.Client)

@@ -1,34 +1,34 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "E:\\SimpleCoop\\",
+  "WorkspaceRootPath": "C:\\SimpleCoop\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|e:\\simplecoop\\positionsync.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|solutionrelative:positionsync.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|e:\\simplecoop\\ordersync.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|c:\\simplecoop\\ordersync.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|solutionrelative:ordersync.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|e:\\simplecoop\\networkmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|c:\\simplecoop\\networkmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|solutionrelative:networkmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|e:\\simplecoop\\modoverlay.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|solutionrelative:modoverlay.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|c:\\simplecoop\\simplecoop.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|solutionrelative:simplecoop.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|e:\\simplecoop\\gamelog.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|c:\\simplecoop\\gamelog.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|solutionrelative:gamelog.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|e:\\simplecoop\\simplecoop.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|c:\\simplecoop\\modoverlay.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|solutionrelative:modoverlay.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|c:\\simplecoop\\simplecoop.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|solutionrelative:simplecoop.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|e:\\simplecoop\\simplecoop.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
-      "RelativeMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|solutionrelative:simplecoop.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+      "AbsoluteMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|c:\\simplecoop\\positionsync.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6B8BB8A3-8811-A1C1-6F6E-721D3F747D30}|SimpleCoop.csproj|solutionrelative:positionsync.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -38,98 +38,102 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 5,
           "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "SimpleCoop",
-              "DocumentMoniker": "E:\\SimpleCoop\\SimpleCoop.csproj",
-              "RelativeDocumentMoniker": "SimpleCoop.csproj",
-              "ToolTip": "E:\\SimpleCoop\\SimpleCoop.csproj",
-              "RelativeToolTip": "SimpleCoop.csproj",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2026-08-12T17:34:38.855Z",
-              "EditorCaption": ""
-            },
             {
               "$type": "Document",
               "DocumentIndex": 5,
               "Title": "SimpleCoop.cs",
-              "DocumentMoniker": "E:\\SimpleCoop\\SimpleCoop.cs",
+              "DocumentMoniker": "C:\\SimpleCoop\\SimpleCoop.cs",
               "RelativeDocumentMoniker": "SimpleCoop.cs",
-              "ToolTip": "E:\\SimpleCoop\\SimpleCoop.cs",
+              "ToolTip": "C:\\SimpleCoop\\SimpleCoop.cs",
               "RelativeToolTip": "SimpleCoop.cs",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAAAFIAAAA0AAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-12T17:34:51.478Z",
+              "WhenOpened": "2026-08-13T13:00:55.018Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 2,
-              "Title": "NetworkManager.cs",
-              "DocumentMoniker": "E:\\SimpleCoop\\NetworkManager.cs",
-              "RelativeDocumentMoniker": "NetworkManager.cs",
-              "ToolTip": "E:\\SimpleCoop\\NetworkManager.cs",
-              "RelativeToolTip": "NetworkManager.cs",
-              "ViewState": "AgIAANcAAAAAAAAAAADwv6EAAAAJAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-12T17:34:47.615Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "PositionSync.cs",
-              "DocumentMoniker": "E:\\SimpleCoop\\PositionSync.cs",
-              "RelativeDocumentMoniker": "PositionSync.cs",
-              "ToolTip": "E:\\SimpleCoop\\PositionSync.cs",
-              "RelativeToolTip": "PositionSync.cs",
-              "ViewState": "AgIAAFoAAAAAAAAAAAAiwPEAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-12T17:34:50.111Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "ModOverlay.cs",
-              "DocumentMoniker": "E:\\SimpleCoop\\ModOverlay.cs",
-              "RelativeDocumentMoniker": "ModOverlay.cs",
-              "ToolTip": "E:\\SimpleCoop\\ModOverlay.cs",
-              "RelativeToolTip": "ModOverlay.cs",
-              "ViewState": "AgIAACAAAAAAAAAAAAAIwAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-12T17:34:46.605Z",
+              "Title": "SimpleCoop",
+              "DocumentMoniker": "C:\\SimpleCoop\\SimpleCoop.csproj",
+              "RelativeDocumentMoniker": "SimpleCoop.csproj",
+              "ToolTip": "C:\\SimpleCoop\\SimpleCoop.csproj",
+              "RelativeToolTip": "SimpleCoop.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-08-13T13:00:35.353Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "OrderSync.cs",
-              "DocumentMoniker": "E:\\SimpleCoop\\OrderSync.cs",
-              "RelativeDocumentMoniker": "OrderSync.cs",
-              "ToolTip": "E:\\SimpleCoop\\OrderSync.cs",
-              "RelativeToolTip": "OrderSync.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAdAAAAAAAAAA==",
+              "Title": "NetworkManager.cs",
+              "DocumentMoniker": "C:\\SimpleCoop\\NetworkManager.cs",
+              "RelativeDocumentMoniker": "NetworkManager.cs",
+              "ToolTip": "C:\\SimpleCoop\\NetworkManager.cs",
+              "RelativeToolTip": "NetworkManager.cs",
+              "ViewState": "AgIAAMEAAAAAAAAAAAAswOUAAAARAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-12T17:34:49.19Z",
+              "WhenOpened": "2026-08-13T13:00:52.363Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 4,
-              "Title": "GameLog.cs",
-              "DocumentMoniker": "E:\\SimpleCoop\\GameLog.cs",
-              "RelativeDocumentMoniker": "GameLog.cs",
-              "ToolTip": "E:\\SimpleCoop\\GameLog.cs",
-              "RelativeToolTip": "GameLog.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABgAAAABAAAAAAAAAA==",
+              "Title": "ModOverlay.cs",
+              "DocumentMoniker": "C:\\SimpleCoop\\ModOverlay.cs",
+              "RelativeDocumentMoniker": "ModOverlay.cs",
+              "ToolTip": "C:\\SimpleCoop\\ModOverlay.cs",
+              "RelativeToolTip": "ModOverlay.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-12T17:34:45.445Z",
+              "WhenOpened": "2026-08-13T13:00:51.452Z",
               "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "GameLog.cs",
+              "DocumentMoniker": "C:\\SimpleCoop\\GameLog.cs",
+              "RelativeDocumentMoniker": "GameLog.cs",
+              "ToolTip": "C:\\SimpleCoop\\GameLog.cs",
+              "RelativeToolTip": "GameLog.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-13T13:00:49.94Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "OrderSync.cs",
+              "DocumentMoniker": "C:\\SimpleCoop\\OrderSync.cs",
+              "RelativeDocumentMoniker": "OrderSync.cs",
+              "ToolTip": "C:\\SimpleCoop\\OrderSync.cs",
+              "RelativeToolTip": "OrderSync.cs",
+              "ViewState": "AgIAAGcAAAAAAAAAAAAkwHQAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-13T13:00:53.213Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "PositionSync.cs",
+              "DocumentMoniker": "C:\\SimpleCoop\\PositionSync.cs",
+              "RelativeDocumentMoniker": "PositionSync.cs",
+              "ToolTip": "C:\\SimpleCoop\\PositionSync.cs",
+              "RelativeToolTip": "PositionSync.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-13T13:00:53.921Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{6324226f-61b6-4f28-92ee-18d4b5fe1e48}"
             }
           ]
         }

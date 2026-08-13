@@ -57,20 +57,63 @@ namespace SimpleCoop
             }
         }
 
-        private static CondOwner FindCrew(string name)
+        
+        public static void ApplyActionOrder(
+            string crewName,
+            string targetName,
+            string interactionName,
+            float x,
+            float y)
         {
-            if (string.IsNullOrEmpty(name)) return null;
-
-            CondOwner selected = CrewSim.GetSelectedCrew();
-            if (selected != null && selected.strName == name)
-                return selected;
-
-            if (CrewSim.objInstance != null)
+            CondOwner crew = FindCrew(crewName);
+            if (crew == null)
             {
-                // Если в CrewSim есть список — доработать позже
+                GameLog.Warn($"[OrderSync] ACT crew not found: {crewName}");
+                return;
             }
 
-            return selected; // временно: если имя не совпало, всё равно пробуем selected
+            CondOwner? target = null;
+            if (!string.IsNullOrEmpty(targetName))
+                target = FindCrew(targetName);
+
+            Interaction? interaction = null;
+            if (!string.IsNullOrEmpty(interactionName))
+                interaction = DataHandler.GetInteraction(interactionName, null, false);
+
+            Tile? tile = null;
+            if (crew.ship != null)
+                tile = crew.ship.GetTileAtWorldCoords1(x, y, true, true);
+
+            ApplyingRemoteOrder = true;
+            try
+            {
+                bool ok = crew.AIIssueOrder(target, interaction, true, tile, x, y);
+                GameLog.Info($"[OrderSync] Applied ACT '{crewName}' {interactionName} on '{targetName}' ok={ok}");
+            }
+            finally
+            {
+                ApplyingRemoteOrder = false;
+            }
+        }
+
+        private static CondOwner? FindCrew(string name)
+        {
+            return FindByName(name);
+        }
+
+        private static CondOwner? FindByName(string name)
+        {
+            if (string.IsNullOrEmpty(name) || DataHandler.mapCOs == null)
+                return null;
+
+            foreach (CondOwner co in DataHandler.mapCOs.Values)
+            {
+                if (co == null) continue;
+                if (co.strName == name || co.strID == name)
+                    return co;
+            }
+
+            return null;
         }
     }
 
@@ -111,10 +154,10 @@ namespace SimpleCoop
                 if (coTarget == null && objInt == null)
                 {
                     OrderSync.SendMoveOrder(__instance, fPosX, fPosY);
-                    return false; // блок локального выполнения
+                    return false;
                 }
 
-                SimpleCoop.Logger.LogInfo($"[OrderSync] Non-move order, blocked on client: {objInt?.strName}");
+                OrderSync.SendActionOrder(__instance, coTarget, objInt, fPosX, fPosY);
                 return false;
             }
 
