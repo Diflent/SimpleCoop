@@ -78,11 +78,11 @@ namespace SimpleCoop
         }
 
         public static void ApplyActionOrder(
-            string crewName,
-            string targetName,
-            string interactionName,
-            float x,
-            float y)
+    string crewName,
+    string targetName,
+    string interactionName,
+    float x,
+    float y)
         {
             CondOwner crew = FindByName(crewName);
             if (crew == null)
@@ -93,33 +93,46 @@ namespace SimpleCoop
 
             CondOwner? target = null;
             if (!string.IsNullOrEmpty(targetName))
-            {
                 target = FindByName(targetName);
-                if (target == null)
-                    GameLog.Warn($"[OrderSync] ACT target not found: {targetName}");
-            }
 
             Interaction? interaction = null;
             if (!string.IsNullOrEmpty(interactionName))
-            {
                 interaction = DataHandler.GetInteraction(interactionName, null, false);
-                if (interaction == null)
-                    GameLog.Warn($"[OrderSync] ACT interaction not found: {interactionName}");
+
+            GameLog.Info(
+                $"[OrderSync] ACT resolve crew={crewName} target={targetName} int={interactionName} " +
+                $"foundT={(target != null)} foundI={(interaction != null)}");
+
+            // Для pickup/use почти всегда нужны оба
+            if (interaction == null)
+            {
+                GameLog.Warn("[OrderSync] ACT aborted: interaction is null");
+                return;
             }
 
-            if (interaction == null && target == null)
+            if (target == null)
             {
-                GameLog.Warn("[OrderSync] ACT aborted: no interaction and no target");
+                GameLog.Warn("[OrderSync] ACT aborted: target is null");
                 return;
             }
 
             ApplyingRemoteOrder = true;
             try
             {
-                bool ok = crew.AIIssueOrder(target, interaction, true, null, 0f, 0f);
+                // как в одиночной игре при клике
+                interaction.bManual = true;
+                interaction.objUs = crew;
+                interaction.objThem = target;
+
+                crew.AICancelAll(null);
+
+                if (crew.Pathfinder != null)
+                    crew.Pathfinder.Reset();
+
+                bool ok = crew.QueueInteraction(target, interaction, false);
+
                 GameLog.Info(
-                    $"[OrderSync] Applied ACT '{crewName}' int='{interactionName}' " +
-                    $"target='{targetName}' foundT={(target != null)} foundI={(interaction != null)} ok={ok}");
+                    $"[OrderSync] QueueInteraction '{interactionName}' on '{targetName}' ok={ok}");
             }
             finally
             {
