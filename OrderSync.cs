@@ -57,7 +57,30 @@ namespace SimpleCoop
             }
         }
 
-        
+        public static void SendActionOrder(
+        CondOwner crew,
+        CondOwner? target,
+        Interaction? interaction,
+        float x,
+        float y)
+        {
+            var net = NetworkManager.Current;
+            if (net == null || !net.IsRunning) return;
+            if (net.Role != NetworkManager.NetRole.Client) return;
+
+            var writer = new NetDataWriter();
+            writer.Put("CMD_ACT");
+            writer.Put(crew != null ? (crew.strName ?? "") : "");
+            writer.Put(target != null ? (target.strName ?? target.strID ?? "") : "");
+            writer.Put(interaction != null ? (interaction.strName ?? "") : "");
+            writer.Put(x);
+            writer.Put(y);
+
+            net.SendRaw(writer);
+            GameLog.Info(
+                $"[OrderSync] Sent ACT '{crew?.strName}' → '{interaction?.strName}' on '{target?.strName}'");
+        }
+
         public static void ApplyActionOrder(
             string crewName,
             string targetName,
