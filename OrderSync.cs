@@ -1,13 +1,9 @@
 ﻿using HarmonyLib;
-using LiteNetLib;
 using LiteNetLib.Utils;
 using UnityEngine;
 
 namespace SimpleCoop
 {
-    /// <summary>
-    /// Синхронизация приказов AIIssueOrder между клиентом и хостом.
-    /// </summary>
     public static class OrderSync
     {
         public static bool ApplyingRemoteOrder;
@@ -20,26 +16,26 @@ namespace SimpleCoop
 
             var writer = new NetDataWriter();
             writer.Put("CMD_MOVE");
-            writer.Put(crew != null ? crew.strName : "");
+            writer.Put(crew != null ? (crew.strID ?? crew.strName ?? "") : "");
             writer.Put(x);
             writer.Put(y);
 
             net.SendRaw(writer);
-            SimpleCoop.Logger.LogInfo($"[OrderSync] Sent MOVE for '{crew?.strName}' → ({x:F1}, {y:F1})");
+            GameLog.Info($"[OrderSync] Sent MOVE for '{crew?.strName}' → ({x:F1}, {y:F1})");
         }
 
         public static void ApplyMoveOrder(string crewName, float x, float y)
         {
-            CondOwner crew = FindCrew(crewName);
+            CondOwner crew = FindByName(crewName);
             if (crew == null)
             {
-                SimpleCoop.Logger.LogWarning($"[OrderSync] Crew not found: {crewName}");
+                GameLog.Warn($"[OrderSync] Crew not found: {crewName}");
                 return;
             }
 
             if (crew.ship == null)
             {
-                SimpleCoop.Logger.LogWarning($"[OrderSync] Crew has no ship: {crewName}");
+                GameLog.Warn($"[OrderSync] Crew has no ship: {crewName}");
                 return;
             }
 
@@ -49,7 +45,7 @@ namespace SimpleCoop
             try
             {
                 bool ok = crew.AIIssueOrder(null, null, true, tile, x, y);
-                SimpleCoop.Logger.LogInfo($"[OrderSync] Applied MOVE '{crewName}' → ({x:F1}, {y:F1}) ok={ok}");
+                GameLog.Info($"[OrderSync] Applied MOVE '{crewName}' → ({x:F1}, {y:F1}) ok={ok}");
             }
             finally
             {
@@ -58,11 +54,11 @@ namespace SimpleCoop
         }
 
         public static void SendActionOrder(
-        CondOwner crew,
-        CondOwner? target,
-        Interaction? interaction,
-        float x,
-        float y)
+            CondOwner crew,
+            CondOwner? target,
+            Interaction? interaction,
+            float x,
+            float y)
         {
             var net = NetworkManager.Current;
             if (net == null || !net.IsRunning) return;
@@ -70,8 +66,8 @@ namespace SimpleCoop
 
             var writer = new NetDataWriter();
             writer.Put("CMD_ACT");
-            writer.Put(crew != null ? (crew.strName ?? "") : "");
-            writer.Put(target != null ? (target.strName ?? target.strID ?? "") : "");
+            writer.Put(crew != null ? (crew.strID ?? crew.strName ?? "") : "");
+            writer.Put(target != null ? (target.strID ?? target.strName ?? "") : "");
             writer.Put(interaction != null ? (interaction.strName ?? "") : "");
             writer.Put(x);
             writer.Put(y);
@@ -88,7 +84,7 @@ namespace SimpleCoop
             float x,
             float y)
         {
-            CondOwner crew = FindCrew(crewName);
+            CondOwner crew = FindByName(crewName);
             if (crew == null)
             {
                 GameLog.Warn($"[OrderSync] ACT crew not found: {crewName}");
@@ -97,31 +93,38 @@ namespace SimpleCoop
 
             CondOwner? target = null;
             if (!string.IsNullOrEmpty(targetName))
-                target = FindCrew(targetName);
+            {
+                target = FindByName(targetName);
+                if (target == null)
+                    GameLog.Warn($"[OrderSync] ACT target not found: {targetName}");
+            }
 
             Interaction? interaction = null;
             if (!string.IsNullOrEmpty(interactionName))
+            {
                 interaction = DataHandler.GetInteraction(interactionName, null, false);
+                if (interaction == null)
+                    GameLog.Warn($"[OrderSync] ACT interaction not found: {interactionName}");
+            }
 
-            Tile? tile = null;
-            if (crew.ship != null)
-                tile = crew.ship.GetTileAtWorldCoords1(x, y, true, true);
+            if (interaction == null && target == null)
+            {
+                GameLog.Warn("[OrderSync] ACT aborted: no interaction and no target");
+                return;
+            }
 
             ApplyingRemoteOrder = true;
             try
             {
-                bool ok = crew.AIIssueOrder(target, interaction, true, tile, x, y);
-                GameLog.Info($"[OrderSync] Applied ACT '{crewName}' {interactionName} on '{targetName}' ok={ok}");
+                bool ok = crew.AIIssueOrder(target, interaction, true, null, 0f, 0f);
+                GameLog.Info(
+                    $"[OrderSync] Applied ACT '{crewName}' int='{interactionName}' " +
+                    $"target='{targetName}' foundT={(target != null)} foundI={(interaction != null)} ok={ok}");
             }
             finally
             {
                 ApplyingRemoteOrder = false;
             }
-        }
-
-        private static CondOwner? FindCrew(string name)
-        {
-            return FindByName(name);
         }
 
         private static CondOwner? FindByName(string name)
@@ -140,9 +143,6 @@ namespace SimpleCoop
         }
     }
 
-    /// <summary>
-    /// Harmony: на клиенте блокируем локальный AIIssueOrder и шлём на хост.
-    /// </summary>
     [HarmonyPatch(typeof(CondOwner), nameof(CondOwner.AIIssueOrder))]
     public static class Patch_AIIssueOrder
     {
@@ -156,12 +156,11 @@ namespace SimpleCoop
             float fPosY)
         {
             var net = NetworkManager.Current;
-            string role = net != null ? net.Role.ToString() : "null";
 
             SimpleCoop.Logger.LogInfo(
-                $"[OrderSync] AIIssueOrder called | role={role} | crew={__instance?.strName} | " +
+                $"[OrderSync] AIIssueOrder | role={net?.Role} | crew={__instance?.strName} | " +
                 $"playerOrdered={bPlayerOrdered} | target={coTarget?.strName} | int={objInt?.strName} | " +
-                $"pos=({fPosX:F1},{fPosY:F1}) | applyingRemote={OrderSync.ApplyingRemoteOrder}");
+                $"pos=({fPosX:F1},{fPosY:F1}) | remote={OrderSync.ApplyingRemoteOrder}");
 
             if (OrderSync.ApplyingRemoteOrder)
                 return true;
