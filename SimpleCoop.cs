@@ -72,11 +72,19 @@ namespace SimpleCoop
             go.AddComponent<ModOverlay>();
 
             GameLog.Info("Overlay ready (F10 Ч hide/show)");
+
+            // --- —инхронизаци€ мира и времени ---
+            TimeSync.Init();
+            CrewSim.OnGameFinishedLoading.AddListener(SaveTransfer.OnGameFinishedLoading);
+            CrewSim.OnGameEnd.AddListener(OnGameEnd);
         }
 
         private void Update()
         {
             _net?.Update();
+
+            SaveTransfer.Update();
+            TimeSync.Update();
 
             // Host: snapshot from Update. Client: interpolation in LateUpdate (on top of game movement).
             if (NetworkManager.Current?.Role == NetworkManager.NetRole.Host)
@@ -117,6 +125,22 @@ namespace SimpleCoop
             // Inventory changes made this frame (both roles)
             ItemSync.Flush();
         }
+
+        /// »гра выгружает мир (выход в меню / загрузка другого сохранени€).
+        private void OnGameEnd()
+        {
+            var net = NetworkManager.Current;
+            if (net == null || !net.IsRunning) return;
+
+            // ” клиента OnGameEnd срабатывает и при загрузке мира хоста Ч тогда он ещЄ не Ђготовї
+            if (net.Role == NetworkManager.NetRole.Host ||
+                (net.Role == NetworkManager.NetRole.Client && net.IsWorldReady))
+            {
+                GameLog.Info("[Net] World unloaded, disconnecting");
+                net.Stop();
+            }
+        }
+
         private void OnDestroy()
         {
             _net?.Stop();
