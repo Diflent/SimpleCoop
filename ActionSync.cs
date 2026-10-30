@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using HarmonyLib;
 using LiteNetLib;
@@ -45,6 +45,15 @@ namespace SimpleCoop
             public bool Cancel;
             public bool Manual;
 
+            // «Контракты» — конкретные предметы, которые игра выбрала в Interaction.Triggered().
+            // ApplyEffects работает ТОЛЬКО с этими списками (подбор, экипировка, выброс, еда...).
+            public string[] Give = Empty;    // aLootItemGiveContract:   us отдаёт them
+            public string[] Use = Empty;     // aLootItemUseContract:    расходуются
+            public string[] Remove = Empty;  // aLootItemRemoveContract: выбрасываются / уничтожаются
+            public string[] Take = Empty;    // aLootItemTakeContract:   us забирает у them
+
+            private static readonly string[] Empty = new string[0];
+
             public void Write(NetDataWriter w)
             {
                 w.Put(Name);
@@ -53,6 +62,27 @@ namespace SimpleCoop
                 w.Put(Third);
                 w.Put(Cancel);
                 w.Put(Manual);
+                PutIds(w, Give);
+                PutIds(w, Use);
+                PutIds(w, Remove);
+                PutIds(w, Take);
+            }
+
+            private static void PutIds(NetDataWriter w, string[] ids)
+            {
+                w.Put(ids.Length);
+                foreach (string id in ids)
+                    w.Put(id);
+            }
+
+            private static string[] GetIds(NetPacketReader r)
+            {
+                int n = r.GetInt();
+                if (n <= 0 || n > 256) return Empty;
+                var ids = new string[n];
+                for (int i = 0; i < n; i++)
+                    ids[i] = r.GetString(128);
+                return ids;
             }
 
             public static FxData Read(NetPacketReader r)
@@ -64,13 +94,21 @@ namespace SimpleCoop
                     Them = r.GetString(128),
                     Third = r.GetString(128),
                     Cancel = r.GetBool(),
-                    Manual = r.GetBool()
+                    Manual = r.GetBool(),
+                    Give = GetIds(r),
+                    Use = GetIds(r),
+                    Remove = GetIds(r),
+                    Take = GetIds(r)
                 };
             }
 
             public override string ToString() =>
                 $"{Name} us={Us} them={Them}" + (Third.Length > 0 ? $" 3rd={Third}" : "") +
-                (Cancel ? " [cancel]" : "") + (Manual ? " [manual]" : "");
+                (Cancel ? " [cancel]" : "") + (Manual ? " [manual]" : "") +
+                List("give", Give) + List("use", Use) + List("remove", Remove) + List("take", Take);
+
+            private static string List(string label, string[] ids) =>
+                ids.Length == 0 ? "" : $" {label}=[{string.Join(",", ids)}]";
         }
 
         /// <summary>Снимаем данные ДО выполнения: после ApplyEffects цель может быть уничтожена.</summary>
@@ -89,8 +127,41 @@ namespace SimpleCoop
                 Them = CoLookup.Id(them),
                 Third = CoLookup.Id(ia.obj3rd),
                 Cancel = isCancel,
-                Manual = ia.bManual
+                Manual = ia.bManual,
+                Give = Ids(ia.aLootItemGiveContract),
+                Use = Ids(ia.aLootItemUseContract),
+                Remove = Ids(ia.aLootItemRemoveContract),
+                Take = Ids(ia.aLootItemTakeContract)
             };
+        }
+
+        private static string[] Ids(List<CondOwner>? list)
+        {
+            if (list == null || list.Count == 0) return new string[0];
+
+            var ids = new List<string>(list.Count);
+            foreach (CondOwner co in list)
+            {
+                if (co != null)
+                    ids.Add(CoLookup.Id(co));
+            }
+            return ids.ToArray();
+        }
+
+        private static List<CondOwner>? Cos(string[] ids, string what, string iaName)
+        {
+            if (ids.Length == 0) return null;
+
+            var list = new List<CondOwner>(ids.Length);
+            foreach (string id in ids)
+            {
+                CondOwner? co = CoLookup.Find(id);
+                if (co != null)
+                    list.Add(co);
+                else
+                    GameLog.Warn($"[ActionSync] {iaName}: {what} item not found ({id})");
+            }
+            return list.Count > 0 ? list : null;
         }
 
         // ---------------- Host ----------------
@@ -207,6 +278,13 @@ namespace SimpleCoop
             }
 
             ia.bManual = d.Manual;
+
+            // Без этого Give/Take/Remove/Use у клиента пусты и предметы никуда не двигаются
+            ia.aLootItemGiveContract = Cos(d.Give, "give", d.Name);
+            ia.aLootItemUseContract = Cos(d.Use, "use", d.Name);
+            ia.aLootItemRemoveContract = Cos(d.Remove, "remove", d.Name);
+            ia.aLootItemTakeContract = Cos(d.Take, "take", d.Name);
+
             return ia;
         }
 
