@@ -77,8 +77,8 @@ namespace SimpleCoop
         private void Update()
         {
             _net?.Update();
-            PositionSync.Update(Time.deltaTime);
 
+            // Host: snapshot from Update. Client: interpolation in LateUpdate (on top of game movement).
             if (NetworkManager.Current?.Role == NetworkManager.NetRole.Host)
                 PositionSync.Update(Time.deltaTime);
 
@@ -101,6 +101,11 @@ namespace SimpleCoop
             else if (UnityEngine.Input.GetKeyDown(KeyCode.F9))
             {
                 _net?.SendCommand("TEST_ACTION");
+            }
+            else if (UnityEngine.Input.GetKeyDown(KeyCode.F11))
+            {
+                ActionSync.Verbose = !ActionSync.Verbose;
+                GameLog.Info($"[ActionSync] Verbose = {ActionSync.Verbose}");
             }
         }
 

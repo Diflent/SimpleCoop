@@ -54,7 +54,7 @@ namespace SimpleCoop
 
             GUILayout.Label($"Network: {run} | Role: {role}");
             GUILayout.Label("F5 Host | F6 Client | F7 Stop | F8 Chat");
-            GUILayout.Label("F9 CMD | F10 Hide/Show this panel");
+            GUILayout.Label("F9 CMD | F10 Hide/Show | F11 FX log");
             GUILayout.Space(6);
 
             _scroll = GUILayout.BeginScrollView(_scroll, GUILayout.Height(130));

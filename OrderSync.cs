@@ -1,12 +1,20 @@
-﻿using HarmonyLib;
+using HarmonyLib;
+using LiteNetLib;
 using LiteNetLib.Utils;
 using UnityEngine;
 
 namespace SimpleCoop
 {
+    /// <summary>
+    /// Приказы игрока клиента (клик по полу / клик по объекту) → хост.
+    /// Результат действия возвращается клиенту через ActionSync (ACT_FX),
+    /// перемещение — через PositionSync.
+    /// </summary>
     public static class OrderSync
     {
         public static bool ApplyingRemoteOrder;
+
+        // ---------------- Client → Host ----------------
 
         public static void SendMoveOrder(CondOwner crew, float x, float y)
         {
@@ -16,41 +24,12 @@ namespace SimpleCoop
 
             var writer = new NetDataWriter();
             writer.Put("CMD_MOVE");
-            writer.Put(crew != null ? (crew.strID ?? crew.strName ?? "") : "");
+            writer.Put(CoLookup.Id(crew));
             writer.Put(x);
             writer.Put(y);
 
             net.SendRaw(writer);
             GameLog.Info($"[OrderSync] Sent MOVE for '{crew?.strName}' → ({x:F1}, {y:F1})");
-        }
-
-        public static void ApplyMoveOrder(string crewName, float x, float y)
-        {
-            CondOwner crew = FindByName(crewName);
-            if (crew == null)
-            {
-                GameLog.Warn($"[OrderSync] Crew not found: {crewName}");
-                return;
-            }
-
-            if (crew.ship == null)
-            {
-                GameLog.Warn($"[OrderSync] Crew has no ship: {crewName}");
-                return;
-            }
-
-            Tile tile = crew.ship.GetTileAtWorldCoords1(x, y, true, true);
-
-            ApplyingRemoteOrder = true;
-            try
-            {
-                bool ok = crew.AIIssueOrder(null, null, true, tile, x, y);
-                GameLog.Info($"[OrderSync] Applied MOVE '{crewName}' → ({x:F1}, {y:F1}) ok={ok}");
-            }
-            finally
-            {
-                ApplyingRemoteOrder = false;
-            }
         }
 
         public static void SendActionOrder(
@@ -66,9 +45,10 @@ namespace SimpleCoop
 
             var writer = new NetDataWriter();
             writer.Put("CMD_ACT");
-            writer.Put(crew != null ? (crew.strID ?? crew.strName ?? "") : "");
-            writer.Put(target != null ? (target.strID ?? target.strName ?? "") : "");
-            writer.Put(interaction != null ? (interaction.strName ?? "") : "");
+            writer.Put(CoLookup.Id(crew));
+            writer.Put(CoLookup.Id(target));
+            writer.Put(interaction?.strName ?? "");
+            writer.Put(CoLookup.Id(interaction?.obj3rd));
             writer.Put(x);
             writer.Put(y);
 
@@ -77,62 +57,35 @@ namespace SimpleCoop
                 $"[OrderSync] Sent ACT '{crew?.strName}' → '{interaction?.strName}' on '{target?.strName}'");
         }
 
-        public static void ApplyActionOrder(
-    string crewName,
-    string targetName,
-    string interactionName,
-    float x,
-    float y)
+        // ---------------- Host ----------------
+
+        public static void ApplyMoveOrder(string crewId, float x, float y)
         {
-            CondOwner crew = FindByName(crewName);
+            CondOwner? crew = CoLookup.Find(crewId);
             if (crew == null)
             {
-                GameLog.Warn($"[OrderSync] ACT crew not found: {crewName}");
+                GameLog.Warn($"[OrderSync] Crew not found: {crewId}");
                 return;
             }
 
-            CondOwner? target = null;
-            if (!string.IsNullOrEmpty(targetName))
-                target = FindByName(targetName);
-
-            Interaction? interaction = null;
-            if (!string.IsNullOrEmpty(interactionName))
-                interaction = DataHandler.GetInteraction(interactionName, null, false);
-
-            GameLog.Info(
-                $"[OrderSync] ACT resolve crew={crewName} target={targetName} int={interactionName} " +
-                $"foundT={(target != null)} foundI={(interaction != null)}");
-
-            // Для pickup/use почти всегда нужны оба
-            if (interaction == null)
+            if (crew.ship == null || crew.Pathfinder == null)
             {
-                GameLog.Warn("[OrderSync] ACT aborted: interaction is null");
+                GameLog.Warn($"[OrderSync] Crew has no ship/pathfinder: {crewId}");
                 return;
             }
 
-            if (target == null)
+            Tile tile = crew.ship.GetTileAtWorldCoords1(x, y, true, true);
+            if (tile == null)
             {
-                GameLog.Warn("[OrderSync] ACT aborted: target is null");
+                GameLog.Warn($"[OrderSync] No tile at ({x:F1},{y:F1})");
                 return;
             }
 
             ApplyingRemoteOrder = true;
             try
             {
-                // как в одиночной игре при клике
-                interaction.bManual = true;
-                interaction.objUs = crew;
-                interaction.objThem = target;
-
-                crew.AICancelAll(null);
-
-                if (crew.Pathfinder != null)
-                    crew.Pathfinder.Reset();
-
-                bool ok = crew.QueueInteraction(target, interaction, false);
-
-                GameLog.Info(
-                    $"[OrderSync] QueueInteraction '{interactionName}' on '{targetName}' ok={ok}");
+                bool ok = IssueWalk(crew, tile, x, y);
+                GameLog.Info($"[OrderSync] Applied MOVE '{crew.strName}' → ({x:F1}, {y:F1}) ok={ok}");
             }
             finally
             {
@@ -140,19 +93,111 @@ namespace SimpleCoop
             }
         }
 
-        private static CondOwner? FindByName(string name)
+        /// <summary>
+        /// Копия ветки "til != null" из CondOwner.AIIssueOrder, но БЕЗ проверки IsPlayer.
+        /// Оригинал для персонажа без IsPlayer (а персонаж клиента на хосте именно такой)
+        /// начисляет FreeWillPenalty и ставит SeekSocialDeny вместо ходьбы,
+        /// а также рисует путь и туториалы на экране хоста.
+        /// </summary>
+        private static bool IssueWalk(CondOwner crew, Tile tile, float x, float y)
         {
-            if (string.IsNullOrEmpty(name) || DataHandler.mapCOs == null)
-                return null;
+            crew.AICancelAll(null);
 
-            foreach (CondOwner co in DataHandler.mapCOs.Values)
+            bool standingUp = false;
+            CondTrigger? prone = DataHandler.GetCondTrigger("TIsProneAwake");
+            if (prone != null && prone.Triggered(crew, null, true))
             {
-                if (co == null) continue;
-                if (co.strName == name || co.strID == name)
-                    return co;
+                Interaction standUp = DataHandler.GetInteraction("ACTStandUp", null, false);
+                if (standUp != null)
+                {
+                    standUp.bManual = true;
+                    standingUp = crew.QueueInteraction(crew, standUp, false);
+                }
             }
 
-            return null;
+            CondTrigger? canWalk = DataHandler.GetCondTrigger("TCanWalk");
+            if (canWalk != null && !canWalk.Triggered(crew, null, true) && !standingUp)
+            {
+                GameLog.Warn($"[OrderSync] '{crew.strName}' can't walk: {canWalk.strFailReasonLast}");
+                return false;
+            }
+
+            PathResult path = crew.Pathfinder.SetGoal2(tile, 0f, null, x, y, crew.HasAirlockPermission(true));
+            if (!path.HasPath)
+            {
+                GameLog.Warn($"[OrderSync] '{crew.strName}' no path: {path.FailReason(crew)}");
+                return false;
+            }
+
+            Interaction walk = DataHandler.GetInteraction("Walk", null, false);
+            if (walk == null) return false;
+
+            walk.bManual = true;
+            if (!crew.QueueInteraction(crew, walk, false))
+                return false;
+
+            walk.objThem = tile.coProps;
+            walk.strTargetPoint = "use";
+            walk.fTargetPointRange = 0f;
+            return true;
+        }
+
+        public static void ApplyActionOrder(
+            string crewId,
+            string targetId,
+            string interactionName,
+            string thirdId,
+            float x,
+            float y)
+        {
+            CondOwner? crew = CoLookup.Find(crewId);
+            if (crew == null)
+            {
+                GameLog.Warn($"[OrderSync] ACT crew not found: {crewId}");
+                return;
+            }
+
+            CondOwner? target = CoLookup.Find(targetId);
+            Interaction? interaction = string.IsNullOrEmpty(interactionName)
+                ? null
+                : DataHandler.GetInteraction(interactionName, null, false);
+
+            if (interaction == null || target == null)
+            {
+                GameLog.Warn(
+                    $"[OrderSync] ACT aborted: crew={crewId} int={interactionName} ({interaction != null}) " +
+                    $"target={targetId} ({target != null})");
+                return;
+            }
+
+            ApplyingRemoteOrder = true;
+            try
+            {
+                // Как AIIssueOrder при клике, но без ветки FreeWill/SeekSocialDeny (см. IssueWalk)
+                interaction.bManual = true;
+                interaction.objUs = crew;
+                interaction.objThem = target;
+
+                if (!string.IsNullOrEmpty(thirdId))
+                {
+                    CondOwner? third = CoLookup.Find(thirdId);
+                    if (third != null) interaction.obj3rd = third;
+                    else GameLog.Warn($"[OrderSync] ACT 3rd not found: {thirdId}");
+                }
+
+                crew.AICancelAll(null);
+                if (crew.Pathfinder != null)
+                    crew.Pathfinder.Reset();
+
+                bool ok = crew.QueueInteraction(target, interaction, false);
+
+                GameLog.Info(
+                    $"[OrderSync] Queued '{interactionName}' for '{crew.strName}' on '{target.strName}' ok={ok}");
+            }
+            finally
+            {
+                ApplyingRemoteOrder = false;
+            }
         }
     }
 
@@ -168,35 +213,24 @@ namespace SimpleCoop
             float fPosX,
             float fPosY)
         {
-            var net = NetworkManager.Current;
-
-            SimpleCoop.Logger.LogInfo(
-                $"[OrderSync] AIIssueOrder | role={net?.Role} | crew={__instance?.strName} | " +
-                $"playerOrdered={bPlayerOrdered} | target={coTarget?.strName} | int={objInt?.strName} | " +
-                $"pos=({fPosX:F1},{fPosY:F1}) | remote={OrderSync.ApplyingRemoteOrder}");
-
             if (OrderSync.ApplyingRemoteOrder)
                 return true;
 
+            var net = NetworkManager.Current;
             if (net == null || !net.IsRunning)
                 return true;
 
-            if (net.Role == NetworkManager.NetRole.Host)
+            if (net.Role != NetworkManager.NetRole.Client || !bPlayerOrdered)
                 return true;
 
-            if (net.Role == NetworkManager.NetRole.Client && bPlayerOrdered)
+            if (coTarget == null && objInt == null)
             {
-                if (coTarget == null && objInt == null)
-                {
-                    OrderSync.SendMoveOrder(__instance, fPosX, fPosY);
-                    return false;
-                }
-
-                OrderSync.SendActionOrder(__instance, coTarget, objInt, fPosX, fPosY);
+                OrderSync.SendMoveOrder(__instance, fPosX, fPosY);
                 return false;
             }
 
-            return true;
+            OrderSync.SendActionOrder(__instance, coTarget, objInt, fPosX, fPosY);
+            return false;
         }
     }
 
