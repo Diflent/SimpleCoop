@@ -117,6 +117,7 @@ namespace SimpleCoop
                 GameLog.Info($"[Net] Disconnected from host: {info.Reason}");
                 Role = NetRole.None;
                 ActionSync.Reset();
+                ItemSync.Clear();
                 PositionSync.Clear();
             };
 
@@ -160,6 +161,7 @@ namespace SimpleCoop
             Role = NetRole.None;
             Current = null;
             ActionSync.Reset();
+            ItemSync.Clear();
             PositionSync.Clear();
             GameLog.Info("[Net] Stopped");
         }
@@ -257,6 +259,12 @@ namespace SimpleCoop
                             ActionSync.OnEffect(fx);
                         break;
                     }
+
+                    // ---- в обе стороны ----
+
+                    case ItemSync.Msg:
+                        ItemSync.OnReceive(peer, reader, Role);
+                        break;
 
                     case "SNAP_POS":
                     {

@@ -113,6 +113,9 @@ namespace SimpleCoop
         {
             if (NetworkManager.Current?.Role == NetworkManager.NetRole.Client)
                 PositionSync.Update(Time.deltaTime);
+
+            // Inventory changes made this frame (both roles)
+            ItemSync.Flush();
         }
         private void OnDestroy()
         {
