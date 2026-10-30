@@ -131,3 +131,17 @@ $RECYCLE.BIN/
 .DS_Store
 
 _NCrunch*
+
+# Visual Studio cache (индексы, Copilot, раскладка окон)
+.vs/
+
+# Rider / VS Code
+.idea/
+.vscode/
+
+# Сборки игры, которые CI скачивает для компиляции
+vendor/
+
+# Архивы
+*.rar
+*.zip

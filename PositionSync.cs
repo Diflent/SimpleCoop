@@ -1,4 +1,4 @@
-﻿using LiteNetLib;
+using LiteNetLib;
 using LiteNetLib.Utils;
 using System.Collections.Generic;
 using UnityEngine;
@@ -11,12 +11,15 @@ namespace SimpleCoop
         private const float SendInterval = 0.15f;
         private const float InterpSpeed = 12f;
         private const float SnapDistance = 3f;
+        private const int MaxEntries = 32;
 
         private static float _timer;
+        // ключ — strID персонажа
         private static readonly Dictionary<string, Vector2> _targets = new Dictionary<string, Vector2>();
         private static readonly int AnimStateHash = Animator.StringToHash("AnimState");
         private static FieldInfo? _animField;
 
+        /// <summary>Хост: вызывать из Update. Клиент: из LateUpdate (поверх движения игры).</summary>
         public static void Update(float deltaTime)
         {
             var net = NetworkManager.Current;
@@ -28,7 +31,8 @@ namespace SimpleCoop
                 if (_timer >= SendInterval)
                 {
                     _timer = 0f;
-                    SendSnapshot(net);
+                    if (net.PeerCount > 0)
+                        SendSnapshot(net);
                 }
             }
             else if (net.Role == NetworkManager.NetRole.Client)
@@ -42,7 +46,7 @@ namespace SimpleCoop
             if (DataHandler.mapCOs == null || DataHandler.mapCOs.Count == 0)
                 return;
 
-            var list = new List<(string name, float x, float y)>();
+            var list = new List<(string id, float x, float y)>();
             var added = new HashSet<string>();
 
             void TryAdd(CondOwner co)
@@ -50,12 +54,12 @@ namespace SimpleCoop
                 if (co == null || co.tf == null) return;
                 if (co.Pathfinder == null) return;
 
-                string name = co.strName ?? co.strID ?? "";
-                if (string.IsNullOrEmpty(name) || added.Contains(name)) return;
+                string id = CoLookup.Id(co);
+                if (string.IsNullOrEmpty(id) || added.Contains(id)) return;
 
                 Vector3 p = co.tf.position;
-                list.Add((name, p.x, p.y));
-                added.Add(name);
+                list.Add((id, p.x, p.y));
+                added.Add(id);
             }
 
             TryAdd(CrewSim.coPlayer);
@@ -69,6 +73,7 @@ namespace SimpleCoop
 
             foreach (CondOwner co in DataHandler.mapCOs.Values)
             {
+                if (list.Count >= MaxEntries) break;
                 if (co == null || co.tf == null || co.Pathfinder == null) continue;
 
                 bool isPerson =
@@ -76,10 +81,8 @@ namespace SimpleCoop
                     co.HasCond("IsPlayer") ||
                     co.HasCond("IsAIManual");
 
-                if (!isPerson) continue;
-
-                TryAdd(co);
-                if (list.Count >= 32) break;
+                if (isPerson)
+                    TryAdd(co);
             }
 
             if (list.Count == 0) return;
@@ -90,12 +93,13 @@ namespace SimpleCoop
 
             foreach (var e in list)
             {
-                writer.Put(e.name);
+                writer.Put(e.id);
                 writer.Put(e.x);
                 writer.Put(e.y);
             }
 
-            net.SendRaw(writer);
+            // Позиции устаревают за 150 мс — переотправка не нужна, важен только порядок.
+            net.SendRaw(writer, DeliveryMethod.Sequenced);
         }
 
         public static void ApplySnapshot(NetPacketReader reader)
@@ -105,12 +109,12 @@ namespace SimpleCoop
 
             for (int i = 0; i < count; i++)
             {
-                string name = reader.GetString(128);
+                string id = reader.GetString(128);
                 float x = reader.GetFloat();
                 float y = reader.GetFloat();
 
-                if (string.IsNullOrEmpty(name)) continue;
-                _targets[name] = new Vector2(x, y);
+                if (string.IsNullOrEmpty(id)) continue;
+                _targets[id] = new Vector2(x, y);
             }
         }
 
@@ -121,7 +125,7 @@ namespace SimpleCoop
 
             foreach (var kv in _targets)
             {
-                CondOwner co = FindByName(kv.Key);
+                CondOwner? co = CoLookup.Find(kv.Key);
                 if (co == null || co.tf == null) continue;
 
                 Vector3 pos = co.tf.position;
@@ -205,9 +209,9 @@ namespace SimpleCoop
         {
             if (co == null || co.tf == null) return false;
 
-            string name = co.strName ?? co.strID ?? "";
-            if (string.IsNullOrEmpty(name)) return false;
-            if (!_targets.TryGetValue(name, out Vector2 target)) return false;
+            string id = CoLookup.Id(co);
+            if (string.IsNullOrEmpty(id)) return false;
+            if (!_targets.TryGetValue(id, out Vector2 target)) return false;
 
             Vector2 cur = new Vector2(co.tf.position.x, co.tf.position.y);
             return Vector2.Distance(cur, target) > 0.05f;
@@ -216,21 +220,6 @@ namespace SimpleCoop
         public static void ForceWalkAnim(CondOwner co)
         {
             SetMoveAnim(co, true);
-        }
-
-        private static CondOwner FindByName(string name)
-        {
-            if (string.IsNullOrEmpty(name) || DataHandler.mapCOs == null)
-                return null;
-
-            foreach (CondOwner co in DataHandler.mapCOs.Values)
-            {
-                if (co == null) continue;
-                if (co.strName == name || co.strID == name)
-                    return co;
-            }
-
-            return null;
         }
 
         public static void Clear()

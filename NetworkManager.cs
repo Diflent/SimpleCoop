@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using BepInEx.Logging;
 using LiteNetLib;
 using LiteNetLib.Utils;
@@ -14,9 +14,13 @@ namespace SimpleCoop
             Client
         }
 
+        /// <summary>До 4 игроков: хост + 3 клиента.</summary>
+        public const int MaxClients = 3;
+
         public static NetworkManager? Current { get; private set; }
         public NetRole Role { get; private set; } = NetRole.None;
         public bool IsRunning => _netManager != null && _netManager.IsRunning;
+        public int PeerCount => _netManager?.ConnectedPeersCount ?? 0;
 
         private NetManager? _netManager;
         private EventBasedNetListener? _listener;
@@ -48,7 +52,7 @@ namespace SimpleCoop
 
             _listener.ConnectionRequestEvent += request =>
             {
-                if (_netManager.ConnectedPeersCount < 1)
+                if (_netManager.ConnectedPeersCount < MaxClients)
                     request.AcceptIfKey(_connectionKey);
                 else
                     request.Reject();
@@ -112,6 +116,9 @@ namespace SimpleCoop
             {
                 GameLog.Info($"[Net] Disconnected from host: {info.Reason}");
                 Role = NetRole.None;
+                ActionSync.Reset();
+                ItemSync.Clear();
+                PositionSync.Clear();
             };
 
             _listener.NetworkReceiveEvent += OnReceive;
@@ -153,6 +160,9 @@ namespace SimpleCoop
 
             Role = NetRole.None;
             Current = null;
+            ActionSync.Reset();
+            ItemSync.Clear();
+            PositionSync.Clear();
             GameLog.Info("[Net] Stopped");
         }
 
@@ -169,7 +179,7 @@ namespace SimpleCoop
             _writer.Put("CHAT");
             _writer.Put(message);
 
-            _netManager.SendToAll(_writer, DeliveryMethod.ReliableOrdered);
+            _netManager!.SendToAll(_writer, DeliveryMethod.ReliableOrdered);
             GameLog.Info($"[Net] Sent: {message}");
         }
 
@@ -187,64 +197,97 @@ namespace SimpleCoop
             {
                 string type = reader.GetString(64);
 
-                if (type == "CHAT")
+                switch (type)
                 {
-                    string msg = reader.GetString(256);
-                    GameLog.Info($"[Net] From {peer.EndPoint}: {msg}");
-                }
-                else if (type == "CMD")
-                {
-                    string cmd = reader.GetString(256);
-                    GameLog.Info($"[Net] CMD from {peer.EndPoint}: {cmd}");
-
-                    if (Role == NetRole.Host)
+                    case "CHAT":
                     {
-                        //заглушка
+                        string msg = reader.GetString(256);
+                        GameLog.Info($"[Net] From {peer.EndPoint}: {msg}");
+                        break;
                     }
-                }
-                else if (type == "CMD_MOVE")
-                {
-                    string crewName = reader.GetString(128);
-                    float x = reader.GetFloat();
-                    float y = reader.GetFloat();
 
-                    GameLog.Info($"[Net] CMD_MOVE from {peer.EndPoint}: {crewName} ({x:F1},{y:F1})");
-
-                    if (Role == NetRole.Host)
+                    case "CMD":
                     {
-                        OrderSync.ApplyMoveOrder(crewName, x, y);
+                        string cmd = reader.GetString(256);
+                        GameLog.Info($"[Net] CMD from {peer.EndPoint}: {cmd}");
+                        break;
                     }
-                }
-                else if (type == "CMD_ACT")
-                {
-                    string crewName = reader.GetString(128);
-                    string targetName = reader.GetString(128);
-                    string interactionName = reader.GetString(128);
-                    float x = reader.GetFloat();
-                    float y = reader.GetFloat();
 
-                    GameLog.Info($"[Net] CMD_ACT {crewName} → {interactionName} on {targetName}");
+                    // ---- client → host ----
 
-                    if (Role == NetRole.Host)
-                        OrderSync.ApplyActionOrder(crewName, targetName, interactionName, x, y);
-                }
-                else if (type == "SNAP_POS")
-                {
-                    if (Role == NetRole.Client)
+                    case "CMD_MOVE":
                     {
-                        PositionSync.ApplySnapshot(reader);
+                        string crewId = reader.GetString(128);
+                        float x = reader.GetFloat();
+                        float y = reader.GetFloat();
+
+                        if (Role == NetRole.Host)
+                            OrderSync.ApplyMoveOrder(crewId, x, y);
+                        break;
                     }
+
+                    case "CMD_ACT":
+                    {
+                        string crewId = reader.GetString(128);
+                        string targetId = reader.GetString(128);
+                        string interactionName = reader.GetString(128);
+                        string thirdId = reader.GetString(128);
+                        float x = reader.GetFloat();
+                        float y = reader.GetFloat();
+
+                        GameLog.Info($"[Net] CMD_ACT {crewId} → {interactionName} on {targetId}");
+
+                        if (Role == NetRole.Host)
+                            OrderSync.ApplyActionOrder(crewId, targetId, interactionName, thirdId, x, y);
+                        break;
+                    }
+
+                    case ActionSync.MsgEffectRequest:
+                    {
+                        var fx = ActionSync.FxData.Read(reader);
+                        if (Role == NetRole.Host)
+                            ActionSync.OnEffectRequest(peer, fx);
+                        break;
+                    }
+
+                    // ---- host → client ----
+
+                    case ActionSync.MsgEffect:
+                    {
+                        var fx = ActionSync.FxData.Read(reader);
+                        if (Role == NetRole.Client)
+                            ActionSync.OnEffect(fx);
+                        break;
+                    }
+
+                    // ---- в обе стороны ----
+
+                    case ItemSync.Msg:
+                        ItemSync.OnReceive(peer, reader, Role);
+                        break;
+
+                    case "SNAP_POS":
+                    {
+                        if (Role == NetRole.Client)
+                            PositionSync.ApplySnapshot(reader);
+                        break;
+                    }
+
+                    default:
+                        _log.LogWarning($"[Net] Unknown packet '{type}' from {peer.EndPoint}");
+                        break;
                 }
             }
             catch (Exception e)
             {
-                _log.LogError($"[Net] Receive error: {e.Message}");
+                _log.LogError($"[Net] Receive error: {e}");
             }
             finally
             {
                 reader.Recycle();
             }
         }
+
         public void SendCommand(string command)
         {
             if (!IsRunning) return;
@@ -253,14 +296,14 @@ namespace SimpleCoop
             _writer.Put("CMD");
             _writer.Put(command);
 
-            _netManager.SendToAll(_writer, DeliveryMethod.ReliableOrdered);
+            _netManager!.SendToAll(_writer, DeliveryMethod.ReliableOrdered);
             _log.LogInfo($"[Net] CMD sent: {command}");
         }
 
-        public void SendRaw(NetDataWriter writer)
+        public void SendRaw(NetDataWriter writer, DeliveryMethod method = DeliveryMethod.ReliableOrdered)
         {
             if (!IsRunning || _netManager == null) return;
-            _netManager.SendToAll(writer, DeliveryMethod.ReliableOrdered);
+            _netManager.SendToAll(writer, method);
         }
     }
 }
