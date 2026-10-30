@@ -315,11 +315,14 @@ namespace SimpleCoop
 
             if (net.Role == NetworkManager.NetRole.Client)
             {
+                if (!net.IsWorldReady)
+                    return true;     // меню / загрузка — игра работает сама
+
                 if (ActionSync.ApplyingRemote)
-                    return true; // воспроизводим эффект хоста
+                    return true;
 
                 ActionSync.OnClientLocalEffect(__instance, isCancelIa);
-                return false;    // локально мир не меняем
+                return false;
             }
 
             if (net.Role == NetworkManager.NetRole.Host)
