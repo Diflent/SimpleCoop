@@ -339,8 +339,8 @@ namespace SimpleCoop
 
                             if (version != ProtocolVersion)
                                 Reject(peer, $"Разные версии мода: хост {ProtocolVersion}, клиент {version}");
-                            else if (build != (DataHandler.strBuild ?? ""))
-                                Reject(peer, $"Разные версии игры: хост {DataHandler.strBuild}, клиент {build}");
+                            //else if (build != (DataHandler.strBuild ?? ""))
+                                //Reject(peer, $"Разные версии игры: хост {DataHandler.strBuild}, клиент {build}");
                             else if (!IsInGame())
                                 Reject(peer, "Хост сейчас не в игре");
                             else
