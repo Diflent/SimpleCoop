@@ -1,4 +1,4 @@
-using BepInEx;
+﻿using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
@@ -15,47 +15,85 @@ namespace SimpleCoop
         private Harmony? _harmony;
         private NetworkManager? _net;
 
-        // ������
+        // Конфиг
         private ConfigEntry<string> _clientIp = null!;
         private ConfigEntry<int> _hostPort = null!;
         private ConfigEntry<int> _clientPort = null!;
         private ConfigEntry<string> _connectionKey = null!;
+
+        // Игрок / хост
+        private ConfigEntry<string> _playerName = null!;
+        private ConfigEntry<string> _playerKey = null!;
+        private ConfigEntry<bool> _autoCreateCrew = null!;
+        private ConfigEntry<string> _assignedCrew = null!;
 
         private void Awake()
         {
             Logger = base.Logger;
             Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
 
-            // --- ������ ---
+            // --- Конфиг ---
             _clientIp = Config.Bind(
                 "Network",
                 "HostIP",
                 "26.0.0.1",
-                "IP ����� �� Radmin VPN (��� �������)");
+                "IP хоста из Radmin VPN (для клиента)");
 
             _hostPort = Config.Bind(
                 "Network",
                 "HostPort",
                 7777,
-                "���� ������� (����)");
+                "Порт сервера (хост)");
 
             _clientPort = Config.Bind(
                 "Network",
                 "ClientPort",
                 7779,
-                "��������� ���� �������");
+                "Локальный порт клиента");
 
             _connectionKey = Config.Bind(
                 "Network",
                 "ConnectionKey",
                 "SimpleCoopKey",
-                "���� ����������� (������ ��������� � ����� � �������)");
+                "Ключ подключения (должен совпадать у хоста и клиента)");
+
+            // --- Игрок ---
+            _playerName = Config.Bind(
+                "Player",
+                "Name",
+                System.Environment.UserName,
+                "Ваше имя — показывается в логе хоста");
+
+            _playerKey = Config.Bind(
+                "Player",
+                "Key",
+                "",
+                "Уникальный ключ: по нему хост возвращает вам того же персонажа. " +
+                "Заполняется автоматически. Если копируете игру для второго клиента — очистите.");
+
+            if (string.IsNullOrEmpty(_playerKey.Value))
+                _playerKey.Value = System.Guid.NewGuid().ToString("N"); // BepInEx сам запишет в .cfg
+
+            // --- Хост ---
+            _autoCreateCrew = Config.Bind(
+                "Host",
+                "AutoCreateCrew",
+                true,
+                "Нанимать нового члена экипажа для игрока, если свободных нет");
+
+            _assignedCrew = Config.Bind(
+                "Host",
+                "AssignedCrew",
+                "",
+                "Служебное: какой персонаж закреплён за каким игроком (ключ=strID;...)");
+
+            PlayerRegistry.Init(_assignedCrew, _playerKey.Value, _playerName.Value, _autoCreateCrew.Value);
 
             // --- Harmony ---
             _harmony = new Harmony(PluginInfo.PLUGIN_GUID);
             _harmony.PatchAll(typeof(SimpleCoop).Assembly);
 
-            // --- ���� ---
+            // --- Сеть ---
             _net = new NetworkManager(
                 Logger,
                 _hostPort.Value,
@@ -66,14 +104,14 @@ namespace SimpleCoop
             Logger.LogInfo("[SimpleCoop] Keys: F5 = Host | F6 = Client | F7 = Stop | F8 = Send test message");
             Logger.LogInfo($"[SimpleCoop] Config: HostIP={_clientIp.Value}, HostPort={_hostPort.Value}, ClientPort={_clientPort.Value}");
 
-            // UI ������� ����
+            // UI оверлей мода
             var go = new GameObject("SimpleCoopOverlay");
             DontDestroyOnLoad(go);
             go.AddComponent<ModOverlay>();
 
-            GameLog.Info("Overlay ready (F10 � hide/show)");
+            GameLog.Info("Overlay ready (F10 — hide/show)");
 
-            // --- ������������� ���� � ������� ---
+            // --- Синхронизация мира и времени ---
             TimeSync.Init();
             CrewSim.OnGameFinishedLoading.AddListener(SaveTransfer.OnGameFinishedLoading);
             CrewSim.OnGameEnd.AddListener(OnGameEnd);
@@ -126,13 +164,13 @@ namespace SimpleCoop
             ItemSync.Flush();
         }
 
-        /// ���� ��������� ��� (����� � ���� / �������� ������� ����������).
+        /// Игра выгружает мир (выход в меню / загрузка другого сохранения).
         private void OnGameEnd()
         {
             var net = NetworkManager.Current;
             if (net == null || !net.IsRunning) return;
 
-            // � ������� OnGameEnd ����������� � ��� �������� ���� ����� � ����� �� ��� �� ������
+            // У клиента OnGameEnd срабатывает и при загрузке мира хоста — тогда он ещё не «готов»
             if (net.Role == NetworkManager.NetRole.Host ||
                 (net.Role == NetworkManager.NetRole.Client && net.IsWorldReady))
             {

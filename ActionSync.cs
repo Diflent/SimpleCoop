@@ -228,8 +228,8 @@ namespace SimpleCoop
         {
             if (isCancel || ia == null || !ia.bManual) return;
 
-            CondOwner me = CrewSim.coPlayer;
-            if (me == null || ia.objUs != me) return;
+            // У клиента coPlayer — персонаж хоста; «свой» персонаж — тот, что назначил хост
+            if (!PlayerRegistry.IsMine(ia.objUs)) return;
 
             FxData? d = Capture(ia, false);
             if (d == null) return;

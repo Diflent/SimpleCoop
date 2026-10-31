@@ -430,6 +430,7 @@ namespace SimpleCoop
             ActionSync.Reset();
             ItemSync.Clear();
             PositionSync.Clear();
+            PlayerRegistry.OnWorldLoaded();   // выделить своего персонажа, камера на него
             net.SetWorldReady();
 
             var w = new NetDataWriter();

@@ -220,17 +220,41 @@ namespace SimpleCoop
             if (net == null || !net.IsRunning)
                 return true;
 
-            if (net.Role != NetworkManager.NetRole.Client || !bPlayerOrdered)
+            // Приказы ИИ (не игрока) не трогаем
+            if (!bPlayerOrdered)
                 return true;
 
-            if (coTarget == null && objInt == null)
+            if (net.Role == NetworkManager.NetRole.Host)
             {
-                OrderSync.SendMoveOrder(__instance, fPosX, fPosY);
+                // Хост не может командовать персонажем, которым управляет клиент
+                if (PlayerRegistry.IsRemoteControlled(__instance))
+                {
+                    GameLog.Warn($"[Order] {__instance.strName} is controlled by another player");
+                    return false;
+                }
+                return true;
+            }
+
+            if (net.Role == NetworkManager.NetRole.Client)
+            {
+                if (!net.IsWorldReady)
+                    return true; // свой мир / загрузка — игра работает как обычно
+
+                // Приказывать можно только своему персонажу (назначен хостом)
+                if (!PlayerRegistry.IsMine(__instance))
+                {
+                    GameLog.Warn($"[Order] {__instance.strName} is not your character");
+                    return false;
+                }
+
+                if (coTarget == null && objInt == null)
+                    OrderSync.SendMoveOrder(__instance, fPosX, fPosY);
+                else
+                    OrderSync.SendActionOrder(__instance, coTarget, objInt, fPosX, fPosY);
                 return false;
             }
 
-            OrderSync.SendActionOrder(__instance, coTarget, objInt, fPosX, fPosY);
-            return false;
+            return true;
         }
     }
 

@@ -20,7 +20,7 @@ namespace SimpleCoop
         public const int MaxClients = 3;
 
         /// <summary>Увеличивать при КАЖДОМ изменении формата любого пакета.</summary>
-        public const int ProtocolVersion = 2;
+        public const int ProtocolVersion = 3;
 
         public static NetworkManager? Current { get; private set; }
         public NetRole Role { get; private set; } = NetRole.None;
@@ -100,6 +100,7 @@ namespace SimpleCoop
             {
                 _readyPeers.Remove(peer.Id);
                 SaveTransfer.OnPeerDisconnected(peer);
+                PlayerRegistry.OnPeerDisconnected(peer);   // персонаж клиента — снова под ИИ
                 GameLog.Info($"[Net] Client disconnected: {peer.EndPoint} ({info.Reason})");
             };
 
@@ -146,6 +147,8 @@ namespace SimpleCoop
                 w.Put(ProtocolVersion);
                 w.Put(PluginInfo.PLUGIN_VERSION);
                 w.Put(DataHandler.strBuild ?? "");
+                w.Put(PlayerRegistry.LocalKey);    // кто я: по ключу хост вернёт того же персонажа
+                w.Put(PlayerRegistry.LocalName);   // имя для логов хоста
                 peer.Send(w, DeliveryMethod.ReliableOrdered);
             };
 
@@ -198,6 +201,8 @@ namespace SimpleCoop
                 _netManager.Stop();
                 _netManager = null;
             }
+
+            PlayerRegistry.Reset();   // отпустить персонажей клиентов, пока мир ещё на месте
 
             Role = NetRole.None;
             Current = null;
@@ -333,18 +338,42 @@ namespace SimpleCoop
                             int version = reader.GetInt();
                             string modVersion = reader.GetString(32);
                             string build = reader.GetString(64);
+                            string playerKey = reader.GetString(64);
+                            string playerName = reader.GetString(64);
                             if (!host) break;
 
-                            GameLog.Info($"[Net] HELLO from {peer.EndPoint}: protocol={version} mod={modVersion} game={build}");
+                            GameLog.Info($"[Net] HELLO from {peer.EndPoint} ({playerName}): protocol={version} mod={modVersion} game={build}");
 
                             if (version != ProtocolVersion)
+                            {
                                 Reject(peer, $"Разные версии мода: хост {ProtocolVersion}, клиент {version}");
-                            //else if (build != (DataHandler.strBuild ?? ""))
-                                //Reject(peer, $"Разные версии игры: хост {DataHandler.strBuild}, клиент {build}");
-                            else if (!IsInGame())
+                                break;
+                            }
+                            if (build != (DataHandler.strBuild ?? ""))
+                            {
+                                Reject(peer, $"Разные версии игры: хост {DataHandler.strBuild}, клиент {build}");
+                                break;
+                            }
+                            if (!IsInGame())
+                            {
                                 Reject(peer, "Хост сейчас не в игре");
-                            else
-                                SaveTransfer.Enqueue(peer);
+                                break;
+                            }
+
+                            // Назначить персонажа ДО сохранения — тогда новый член экипажа попадёт в сохранение
+                            string? crewId = PlayerRegistry.AssignOnHost(peer, playerKey, playerName, out string why);
+                            if (crewId == null)
+                            {
+                                Reject(peer, why);
+                                break;
+                            }
+
+                            var assign = new NetDataWriter();
+                            assign.Put(PlayerRegistry.MsgAssign);
+                            assign.Put(crewId);
+                            SendToPeer(peer, assign);
+
+                            SaveTransfer.Enqueue(peer);
                             break;
                         }
 
@@ -364,6 +393,10 @@ namespace SimpleCoop
                         if (host) SaveTransfer.OnLoaded(peer);
                         break;
 
+                    case PlayerRegistry.MsgAssign:
+                        if (client) PlayerRegistry.OnAssign(reader);
+                        break;
+
                     // ---------- клиент → хост (только от загрузившихся) ----------
 
                     case "CMD_MOVE":
@@ -371,7 +404,8 @@ namespace SimpleCoop
                             string crewId = reader.GetString(128);
                             float x = reader.GetFloat();
                             float y = reader.GetFloat();
-                            if (peerReady) OrderSync.ApplyMoveOrder(crewId, x, y);
+                            if (peerReady && PlayerRegistry.Owns(peer, crewId))
+                                OrderSync.ApplyMoveOrder(crewId, x, y);
                             break;
                         }
 
@@ -385,7 +419,7 @@ namespace SimpleCoop
                             float y = reader.GetFloat();
 
                             GameLog.Info($"[Net] CMD_ACT {crewId} → {interactionName} on {targetId}");
-                            if (peerReady)
+                            if (peerReady && PlayerRegistry.Owns(peer, crewId))
                                 OrderSync.ApplyActionOrder(crewId, targetId, interactionName, thirdId, x, y);
                             break;
                         }
@@ -393,7 +427,8 @@ namespace SimpleCoop
                     case ActionSync.MsgEffectRequest:
                         {
                             var fx = ActionSync.FxData.Read(reader);
-                            if (peerReady) ActionSync.OnEffectRequest(peer, fx);
+                            if (peerReady && PlayerRegistry.Owns(peer, fx.Us))
+                                ActionSync.OnEffectRequest(peer, fx);
                             break;
                         }
 
