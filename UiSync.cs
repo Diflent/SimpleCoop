@@ -1,6 +1,8 @@
 ﻿using HarmonyLib;
 using LiteNetLib;
 using LiteNetLib.Utils;
+using Ostranauts.InputControl;
+using Ostranauts.Inventory;
 
 namespace SimpleCoop
 {
@@ -12,7 +14,7 @@ namespace SimpleCoop
     /// </summary>
     public static class UiSync
     {
-        public const string MsgRaiseUI = "RAISE_UI"; // хост → клиент: key, coSelfId
+        public const string MsgRaiseUI = "RAISE_UI"; // хост → клиент: key, coSelfId, targetId
 
         /// <summary>
         /// Кто «открывает» окно. Повторяет логику CrewSim.RaiseUI: если окно — у предмета
@@ -27,11 +29,23 @@ namespace SimpleCoop
             return ia?.objThem;
         }
 
+        /// <summary>
+        /// Хост: цель текущего взаимодействия (для окна инвентаря — открываемый контейнер).
+        /// У клиента этого взаимодействия нет (оно выполняется на хосте), поэтому
+        /// coSelf.GetInteractionCurrent() там пустой — цель передаём явно.
+        /// </summary>
+        internal static string TargetId(CondOwner coSelf)
+        {
+            Interaction? ia = coSelf != null ? coSelf.GetInteractionCurrent() : null;
+            return CoLookup.Id(ia?.objThem);
+        }
+
         /// <summary>Клиент: хост просит открыть окно.</summary>
         public static void OnRaiseUI(NetPacketReader r)
         {
             string key = r.GetString(64);
             string id = r.GetString(128);
+            string targetId = r.GetString(128);
 
             CondOwner? co = CoLookup.Find(id);
             if (co == null)
@@ -40,7 +54,39 @@ namespace SimpleCoop
                 return;
             }
 
+            if (key == "Inventory")
+            {
+                OpenContainer(co, CoLookup.Find(targetId), targetId);
+                return;
+            }
+
+            // Остальные окна — как в игре. Если окно само читает GetInteractionCurrent(),
+            // у клиента оно может открыться пустым: такие случаи разбираем по одному.
             CrewSim.RaiseUI(key, co);
+        }
+
+        /// <summary>
+        /// Повторяет ветку strCOGUIKey == "Inventory" из CrewSim.RaiseUI, но контейнер
+        /// берёт из пакета, а не из coSelf.GetInteractionCurrent().objThem.
+        /// </summary>
+        private static void OpenContainer(CondOwner crew, CondOwner? container, string containerId)
+        {
+            if (container == null)
+            {
+                GameLog.Warn($"[UI] Container {containerId} not found");
+                return;
+            }
+
+            // Окно инвентаря показывается для выделенного персонажа
+            if (crew != CrewSim.GetSelectedCrew() && CrewSim.objInstance != null)
+                CrewSim.objInstance.SetBracketTarget(crew.strID, false);
+
+            if (CrewSim.inventoryGUI == null) return;
+
+            if (!CrewSim.inventoryGUI.IsOpen)
+                CommandInventory.ToggleInventory(crew, false);
+
+            CrewSim.inventoryGUI.SpawnInventoryWindow(container, InventoryWindowType.Container, null, null);
         }
     }
 
@@ -62,6 +108,7 @@ namespace SimpleCoop
             w.Put(UiSync.MsgRaiseUI);
             w.Put(strCOGUIKey);
             w.Put(CoLookup.Id(coSelf));
+            w.Put(UiSync.TargetId(coSelf));   // что открываем (контейнер) — у клиента этого взаимодействия нет
             net.SendToPeerId(PlayerRegistry.PeerIdOf(actor), w);
             return false;
         }

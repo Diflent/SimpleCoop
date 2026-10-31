@@ -20,7 +20,7 @@ namespace SimpleCoop
         public const int MaxClients = 3;
 
         /// <summary>Увеличивать при КАЖДОМ изменении формата любого пакета.</summary>
-        public const int ProtocolVersion = 4;
+        public const int ProtocolVersion = 5;
 
         public static NetworkManager? Current { get; private set; }
         public NetRole Role { get; private set; } = NetRole.None;

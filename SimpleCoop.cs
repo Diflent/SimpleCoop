@@ -190,6 +190,6 @@ namespace SimpleCoop
     {
         public const string PLUGIN_GUID = "com.Diflent.ostranauts.SimpleCoop";
         public const string PLUGIN_NAME = "SimpleCoop";
-        public const string PLUGIN_VERSION = "0.5.0";
+        public const string PLUGIN_VERSION = "0.5.1";
     }
 }
