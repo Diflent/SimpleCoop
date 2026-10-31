@@ -16,20 +16,30 @@ namespace SimpleCoop
 
         // ---------------- Client → Host ----------------
 
-        public static void SendMoveOrder(CondOwner crew, float x, float y)
+        public static void SendMoveOrder(CondOwner crew, Tile? til, float x, float y)
         {
             var net = NetworkManager.Current;
             if (net == null || !net.IsRunning) return;
             if (net.Role != NetworkManager.NetRole.Client) return;
 
+            string shipId = ShipIdOf(til);
+
             var writer = new NetDataWriter();
             writer.Put("CMD_MOVE");
             writer.Put(CoLookup.Id(crew));
+            writer.Put(shipId);   // на каком корабле клетка, по которой кликнули
             writer.Put(x);
             writer.Put(y);
 
             net.SendRaw(writer);
-            GameLog.Info($"[OrderSync] Sent MOVE for '{crew?.strName}' → ({x:F1}, {y:F1})");
+            GameLog.Info($"[OrderSync] Sent MOVE for '{crew?.strName}' → ({x:F1}, {y:F1}) ship={shipId}");
+        }
+
+        /// <summary>У клетки свой CondOwner (coProps), а у него — корабль.</summary>
+        private static string ShipIdOf(Tile? til)
+        {
+            if (til == null || til.coProps == null || til.coProps.ship == null) return "";
+            return til.coProps.ship.strRegID ?? "";
         }
 
         public static void SendActionOrder(
@@ -59,7 +69,7 @@ namespace SimpleCoop
 
         // ---------------- Host ----------------
 
-        public static void ApplyMoveOrder(string crewId, float x, float y)
+        public static void ApplyMoveOrder(string crewId, string shipId, float x, float y)
         {
             CondOwner? crew = CoLookup.Find(crewId);
             if (crew == null)
@@ -74,10 +84,22 @@ namespace SimpleCoop
                 return;
             }
 
-            Tile tile = crew.ship.GetTileAtWorldCoords1(x, y, true, true);
+            // 1) Корабль, по которому кликнул клиент (может быть пристыкованный,
+            //    а не тот, на котором сейчас стоит персонаж)
+            Tile? tile = null;
+            if (!string.IsNullOrEmpty(shipId) && CrewSim.system?.dictShips != null &&
+                CrewSim.system.dictShips.TryGetValue(shipId, out Ship target) && target != null)
+            {
+                tile = target.GetTileAtWorldCoords1(x, y, true, true);
+            }
+
+            // 2) Запасной вариант — корабль персонажа
+            if (tile == null)
+                tile = crew.ship.GetTileAtWorldCoords1(x, y, true, true);
+
             if (tile == null)
             {
-                GameLog.Warn($"[OrderSync] No tile at ({x:F1},{y:F1})");
+                GameLog.Warn($"[OrderSync] No tile at ({x:F1},{y:F1}) ship={shipId}");
                 return;
             }
 
@@ -248,7 +270,7 @@ namespace SimpleCoop
                 }
 
                 if (coTarget == null && objInt == null)
-                    OrderSync.SendMoveOrder(__instance, fPosX, fPosY);
+                    OrderSync.SendMoveOrder(__instance, til, fPosX, fPosY);
                 else
                     OrderSync.SendActionOrder(__instance, coTarget, objInt, fPosX, fPosY);
                 return false;

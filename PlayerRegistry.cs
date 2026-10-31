@@ -98,6 +98,9 @@ namespace SimpleCoop
             if (!crew.HasCond("IsAIManual"))
                 crew.AddCondAmount("IsAIManual", 1.0, 0.0, 0f);
 
+            // Шлюзы и сход с корабля — иначе персонаж не может перейти на другой корабль
+            GrantPermissions(crew);
+
             GameLog.Info($"[Players] {name} → {crew.strName} ({id})");
             return id;
         }
@@ -114,6 +117,50 @@ namespace SimpleCoop
         public static bool IsRemoteControlled(CondOwner co)
         {
             return co != null && _crewByPeer.ContainsValue(CoLookup.Id(co));
+        }
+
+        /// <summary>Хост: peer.Id клиента, управляющего персонажем, или -1.</summary>
+        public static int PeerIdOf(CondOwner co)
+        {
+            string id = CoLookup.Id(co);
+            foreach (var kv in _crewByPeer)
+            {
+                if (kv.Value == id)
+                    return kv.Key;
+            }
+            return -1;
+        }
+
+        /// <summary>Хост: персонажи подключённых клиентов.</summary>
+        public static IEnumerable<CondOwner> RemoteCrews()
+        {
+            foreach (string id in _crewByPeer.Values)
+            {
+                CondOwner? co = CoLookup.Find(id);
+                if (co != null && !co.bDestroyed)
+                    yield return co;
+            }
+        }
+
+        /// <summary>
+        /// Галочки из окна «Экипаж» (ростер компании). Без них персонаж не проходит
+        /// шлюзы (CondOwner.HasAirlockPermission) и не может сходить с корабля (HasShoreLeave).
+        /// Назначение делается ДО сохранения — у клиента разрешения придут вместе с миром.
+        /// </summary>
+        private static void GrantPermissions(CondOwner crew)
+        {
+            var roster = (crew.Company ?? CrewSim.coPlayer?.Company)?.mapRoster;
+            if (roster == null) return;
+
+            string id = CoLookup.Id(crew);
+            if (!roster.TryGetValue(id, out JsonCompanyRules rules) || rules == null)
+            {
+                rules = new JsonCompanyRules();
+                roster[id] = rules;
+            }
+
+            rules.bAirlockPermission = true;
+            rules.bShoreLeave = true;
         }
 
         /// Хост: клиент отключился — персонаж возвращается под управление ИИ.

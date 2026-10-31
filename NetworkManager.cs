@@ -20,7 +20,7 @@ namespace SimpleCoop
         public const int MaxClients = 3;
 
         /// <summary>Увеличивать при КАЖДОМ изменении формата любого пакета.</summary>
-        public const int ProtocolVersion = 3;
+        public const int ProtocolVersion = 4;
 
         public static NetworkManager? Current { get; private set; }
         public NetRole Role { get; private set; } = NetRole.None;
@@ -278,6 +278,15 @@ namespace SimpleCoop
             peer.Send(writer, method);
         }
 
+        /// <summary>Хост: служебный пакет клиенту по peer.Id.</summary>
+        public void SendToPeerId(int peerId, NetDataWriter writer)
+        {
+            if (peerId < 0 || _netManager == null) return;
+            NetPeer? peer = _netManager.GetPeerById(peerId);
+            if (peer != null)
+                peer.Send(writer, DeliveryMethod.ReliableOrdered);
+        }
+
         /// <summary>Клиент: служебный пакет хосту (HELLO, LOADED) — не зависит от готовности.</summary>
         public void SendControl(NetDataWriter writer)
         {
@@ -402,10 +411,11 @@ namespace SimpleCoop
                     case "CMD_MOVE":
                         {
                             string crewId = reader.GetString(128);
+                            string shipId = reader.GetString(64);
                             float x = reader.GetFloat();
                             float y = reader.GetFloat();
                             if (peerReady && PlayerRegistry.Owns(peer, crewId))
-                                OrderSync.ApplyMoveOrder(crewId, x, y);
+                                OrderSync.ApplyMoveOrder(crewId, shipId, x, y);
                             break;
                         }
 
@@ -444,6 +454,10 @@ namespace SimpleCoop
                             if (worldReady) ActionSync.OnEffect(fx);
                             break;
                         }
+
+                    case UiSync.MsgRaiseUI:
+                        if (worldReady) UiSync.OnRaiseUI(reader);
+                        break;
 
                     case "SNAP_POS":
                         if (worldReady) PositionSync.ApplySnapshot(reader);
