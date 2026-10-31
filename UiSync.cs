@@ -60,9 +60,58 @@ namespace SimpleCoop
                 return;
             }
 
-            // Остальные окна — как в игре. Если окно само читает GetInteractionCurrent(),
-            // у клиента оно может открыться пустым: такие случаи разбираем по одному.
+            // Остальные окна (зеркало раковины, терминалы...) сами читают
+            // coSelf.GetInteractionCurrent().objThem. У клиента этого взаимодействия нет —
+            // на время, пока окно открыто, подставляем его (см. Patch_GetInteractionCurrent).
+            CondOwner? target = CoLookup.Find(targetId);
+            if (target != null)
+                SetInteractionOverride(co, target, true);
+
             CrewSim.RaiseUI(key, co);
+
+            if (CrewSim.goUI == null)
+                ClearInteractionOverride(); // окно не открылось
+        }
+
+        // ===================================================================
+        //       Подмена «текущего взаимодействия» для окон у клиента
+        // ===================================================================
+
+        private static CondOwner? _overrideCo;
+        private static CondOwner? _overrideThem;
+        private static bool _overrideAlways;
+        private static Interaction? _dummy;
+
+        /// <summary>
+        /// Пока окно открыто, co.GetInteractionCurrent() вернёт взаимодействие «co → them».
+        /// always=false — только если у co своего текущего взаимодействия нет.
+        /// </summary>
+        internal static void SetInteractionOverride(CondOwner co, CondOwner them, bool always)
+        {
+            _overrideCo = co;
+            _overrideThem = them;
+            _overrideAlways = always;
+        }
+
+        internal static void ClearInteractionOverride()
+        {
+            _overrideCo = null;
+            _overrideThem = null;
+        }
+
+        internal static void TryOverride(CondOwner instance, ref Interaction result)
+        {
+            // (object) — обычное сравнение ссылок: метод вызывается очень часто,
+            // а Unity-шный == для объектов заметно дороже
+            if ((object?)_overrideCo == null || !ReferenceEquals(instance, _overrideCo)) return;
+            if (result != null && !_overrideAlways) return;
+
+            _dummy ??= DataHandler.GetInteraction("Wait", null, false);
+            if (_dummy == null) return;
+
+            _dummy.objUs = _overrideCo!;
+            _dummy.objThem = _overrideThem!;
+            result = _dummy;
         }
 
         /// <summary>
@@ -87,6 +136,26 @@ namespace SimpleCoop
                 CommandInventory.ToggleInventory(crew, false);
 
             CrewSim.inventoryGUI.SpawnInventoryWindow(container, InventoryWindowType.Container, null, null);
+        }
+    }
+
+    [HarmonyPatch(typeof(CondOwner), nameof(CondOwner.GetInteractionCurrent))]
+    public static class Patch_GetInteractionCurrent
+    {
+        static void Postfix(CondOwner __instance, ref Interaction __result)
+        {
+            UiSync.TryOverride(__instance, ref __result);
+        }
+    }
+
+    /// <summary>Окно закрыто — подмена больше не нужна.</summary>
+    [HarmonyPatch(typeof(CrewSim), nameof(CrewSim.LowerUI))]
+    public static class Patch_CrewSim_LowerUI
+    {
+        static void Postfix()
+        {
+            if (CrewSim.goUI == null)
+                UiSync.ClearInteractionOverride();
         }
     }
 

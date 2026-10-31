@@ -20,7 +20,7 @@ namespace SimpleCoop
         public const int MaxClients = 3;
 
         /// <summary>Увеличивать при КАЖДОМ изменении формата любого пакета.</summary>
-        public const int ProtocolVersion = 5;
+        public const int ProtocolVersion = 6;
 
         public static NetworkManager? Current { get; private set; }
         public NetRole Role { get; private set; } = NetRole.None;
@@ -213,6 +213,7 @@ namespace SimpleCoop
             ItemSync.Clear();
             PositionSync.Clear();
             SaveTransfer.Reset();
+            AppearanceSync.Reset();
 
             GameLog.Info("[Net] Stopped");
         }
@@ -370,7 +371,7 @@ namespace SimpleCoop
                             }
 
                             // Назначить персонажа ДО сохранения — тогда новый член экипажа попадёт в сохранение
-                            string? crewId = PlayerRegistry.AssignOnHost(peer, playerKey, playerName, out string why);
+                            string? crewId = PlayerRegistry.AssignOnHost(peer, playerKey, playerName, out string why, out bool firstTime);
                             if (crewId == null)
                             {
                                 Reject(peer, why);
@@ -380,6 +381,7 @@ namespace SimpleCoop
                             var assign = new NetDataWriter();
                             assign.Put(PlayerRegistry.MsgAssign);
                             assign.Put(crewId);
+                            assign.Put(firstTime);   // новый игрок → клиент откроет окно внешности
                             SendToPeer(peer, assign);
 
                             SaveTransfer.Enqueue(peer);
@@ -452,6 +454,18 @@ namespace SimpleCoop
                         {
                             var fx = ActionSync.FxData.Read(reader);
                             if (worldReady) ActionSync.OnEffect(fx);
+                            break;
+                        }
+
+                    // ---------- внешность: клиент → хост → все ----------
+
+                    case AppearanceSync.Msg:
+                        {
+                            var look = AppearanceSync.Look.Read(reader);
+                            if (peerReady && PlayerRegistry.Owns(peer, look.CrewId))
+                                AppearanceSync.ApplyAndRelay(look);   // хост: применить и разослать
+                            else if (worldReady)
+                                AppearanceSync.Apply(look);           // клиент
                             break;
                         }
 

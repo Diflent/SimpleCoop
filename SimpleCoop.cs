@@ -122,6 +122,7 @@ namespace SimpleCoop
             _net?.Update();
 
             SaveTransfer.Update();
+            AppearanceSync.Update();
             TimeSync.Update();
 
             // Host: snapshot from Update. Client: interpolation in LateUpdate (on top of game movement).
@@ -152,6 +153,10 @@ namespace SimpleCoop
             {
                 ActionSync.Verbose = !ActionSync.Verbose;
                 GameLog.Info($"[ActionSync] Verbose = {ActionSync.Verbose}");
+            }
+            else if (UnityEngine.Input.GetKeyDown(KeyCode.F4))
+            {
+                AppearanceSync.OpenEditor(); // окно внешности своего персонажа
             }
         }
 
@@ -190,6 +195,6 @@ namespace SimpleCoop
     {
         public const string PLUGIN_GUID = "com.Diflent.ostranauts.SimpleCoop";
         public const string PLUGIN_NAME = "SimpleCoop";
-        public const string PLUGIN_VERSION = "0.5.1";
+        public const string PLUGIN_VERSION = "0.6.0";
     }
 }

@@ -48,9 +48,12 @@ namespace SimpleCoop
         private static readonly Dictionary<int, string> _keyByPeer = new Dictionary<int, string>();
 
         /// Подобрать персонажа для подключившегося клиента.
-        public static string? AssignOnHost(NetPeer peer, string key, string name, out string reason)
+        public static string? AssignOnHost(NetPeer peer, string key, string name, out string reason, out bool firstTime)
         {
             reason = "";
+
+            // Игрок с таким ключом у хоста впервые — клиенту откроется окно внешности
+            firstTime = !string.IsNullOrEmpty(key) && !_byKey.ContainsKey(key);
 
             if (string.IsNullOrEmpty(key))
             {
@@ -262,10 +265,14 @@ namespace SimpleCoop
         public static bool IsMine(CondOwner? co) =>
             co != null && OwnCrewId != null && CoLookup.Id(co) == OwnCrewId;
 
+        /// <summary>Клиент: персонаж новый — после загрузки открыть окно внешности.</summary>
+        public static bool NeedsSetup { get; private set; }
+
         public static void OnAssign(NetPacketReader r)
         {
             OwnCrewId = r.GetString(128);
-            GameLog.Info($"[Players] Host assigned you character {OwnCrewId}");
+            NeedsSetup = r.GetBool();
+            GameLog.Info($"[Players] Host assigned you character {OwnCrewId}" + (NeedsSetup ? " (new)" : ""));
         }
 
         /// Клиент: мир загружен — выделить своего персонажа и навести камеру.
@@ -285,6 +292,16 @@ namespace SimpleCoop
             }
 
             GameLog.Info($"[Players] You are playing as {co.strName}");
+
+            if (NeedsSetup)
+            {
+                NeedsSetup = false;
+                AppearanceSync.RequestOpen(); // первое подключение — настроить внешность
+            }
+            else
+            {
+                GameLog.Info("[Players] F4 — изменить внешность");
+            }
         }
 
         // ===================================================================
@@ -298,6 +315,7 @@ namespace SimpleCoop
             _crewByPeer.Clear();
             _keyByPeer.Clear();
             OwnCrewId = null;
+            NeedsSetup = false;
         }
     }
 }
