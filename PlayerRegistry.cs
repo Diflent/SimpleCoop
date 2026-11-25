@@ -41,19 +41,24 @@ namespace SimpleCoop
         //                               ХОСТ
         // ===================================================================
 
+        /// Закрепления «мир|ключ игрока = strID». Мир — strID персонажа хоста:
+        /// у каждого прохождения свой, поэтому чужое сохранение не подхватит старые id.
         private static readonly Dictionary<string, string> _byKey = new Dictionary<string, string>();
 
         // Только те, кто подключён.
         private static readonly Dictionary<int, string> _crewByPeer = new Dictionary<int, string>();
         private static readonly Dictionary<int, string> _keyByPeer = new Dictionary<int, string>();
 
+        /// Кому IsAIManual поставили мы — только с них его и снимаем.
+        private static readonly HashSet<string> _manualByUs = new HashSet<string>();
+
+        private static string WorldPrefix() => CoLookup.Id(CrewSim.coPlayer) + "|";
+
         /// Подобрать персонажа для подключившегося клиента.
         public static string? AssignOnHost(NetPeer peer, string key, string name, out string reason, out bool firstTime)
         {
             reason = "";
-
-            // Игрок с таким ключом у хоста впервые — клиенту откроется окно внешности
-            firstTime = !string.IsNullOrEmpty(key) && !_byKey.ContainsKey(key);
+            firstTime = false;
 
             if (string.IsNullOrEmpty(key))
             {
@@ -67,15 +72,19 @@ namespace SimpleCoop
                 return null;
             }
 
+            string worldKey = WorldPrefix() + key;
             CondOwner? crew = null;
 
-            // Тот же персонаж, что был у этого игрока раньше
-            if (_byKey.TryGetValue(key, out string oldId))
+            // Тот же персонаж, что был у этого игрока раньше в этом мире
+            if (_byKey.TryGetValue(worldKey, out string oldId))
             {
                 crew = CoLookup.Find(oldId);
                 if (!IsUsable(crew) || IsTaken(crew!))
                     crew = null;
             }
+
+            // Персонаж для игрока новый — клиенту откроется окно внешности
+            firstTime = crew == null;
 
             // Свободный член экипажа
             if (crew == null)
@@ -92,14 +101,17 @@ namespace SimpleCoop
             }
 
             string id = CoLookup.Id(crew);
-            _byKey[key] = id;
+            _byKey[worldKey] = id;
             _crewByPeer[peer.Id] = id;
             _keyByPeer[peer.Id] = key;
             Save();
 
             // Ручное управление: ИИ хоста не будет сам раздавать этому персонажу задачи
             if (!crew.HasCond("IsAIManual"))
+            {
                 crew.AddCondAmount("IsAIManual", 1.0, 0.0, 0f);
+                _manualByUs.Add(id);
+            }
 
             // Шлюзы и сход с корабля — иначе персонаж не может перейти на другой корабль
             GrantPermissions(crew);
@@ -179,6 +191,9 @@ namespace SimpleCoop
 
         private static void Release(string crewId)
         {
+            // Ручное управление, поставленное самим хостом, не трогаем
+            if (!_manualByUs.Remove(crewId)) return;
+
             CondOwner? co = CoLookup.Find(crewId);
             if (co != null && !co.bDestroyed)
             {
@@ -204,7 +219,10 @@ namespace SimpleCoop
             var company = CrewSim.coPlayer?.Company;
             if (company?.mapRoster == null) return null;
 
-            var reserved = new HashSet<string>(_byKey.Values); // закреплены за игроками
+            // Закреплены за игроками в этом мире
+            string prefix = WorldPrefix();
+            var reserved = new HashSet<string>(
+                _byKey.Where(kv => kv.Key.StartsWith(prefix)).Select(kv => kv.Value));
 
             foreach (string id in company.mapRoster.Keys)
             {
@@ -232,7 +250,8 @@ namespace SimpleCoop
             return co;
         }
 
-        // ---- сохранение закреплений в конфиг: "ключ=strID;ключ=strID" ----
+        // ---- сохранение закреплений в конфиг: "мир|ключ=strID;мир|ключ=strID" ----
+        // Старые записи без «мир|» просто не совпадут ни с одним миром.
 
         private static void Load()
         {
