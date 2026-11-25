@@ -20,7 +20,7 @@ namespace SimpleCoop
         public const int MaxClients = 3;
 
         /// <summary>Увеличивать при КАЖДОМ изменении формата любого пакета.</summary>
-        public const int ProtocolVersion = 2;
+        public const int ProtocolVersion = 6;
 
         public static NetworkManager? Current { get; private set; }
         public NetRole Role { get; private set; } = NetRole.None;
@@ -100,6 +100,7 @@ namespace SimpleCoop
             {
                 _readyPeers.Remove(peer.Id);
                 SaveTransfer.OnPeerDisconnected(peer);
+                PlayerRegistry.OnPeerDisconnected(peer);   // персонаж клиента — снова под ИИ
                 GameLog.Info($"[Net] Client disconnected: {peer.EndPoint} ({info.Reason})");
             };
 
@@ -146,6 +147,8 @@ namespace SimpleCoop
                 w.Put(ProtocolVersion);
                 w.Put(PluginInfo.PLUGIN_VERSION);
                 w.Put(DataHandler.strBuild ?? "");
+                w.Put(PlayerRegistry.LocalKey);    // кто я: по ключу хост вернёт того же персонажа
+                w.Put(PlayerRegistry.LocalName);   // имя для логов хоста
                 peer.Send(w, DeliveryMethod.ReliableOrdered);
             };
 
@@ -199,6 +202,8 @@ namespace SimpleCoop
                 _netManager = null;
             }
 
+            PlayerRegistry.Reset();   // отпустить персонажей клиентов, пока мир ещё на месте
+
             Role = NetRole.None;
             Current = null;
             IsWorldReady = false;
@@ -208,6 +213,7 @@ namespace SimpleCoop
             ItemSync.Clear();
             PositionSync.Clear();
             SaveTransfer.Reset();
+            AppearanceSync.Reset();
 
             GameLog.Info("[Net] Stopped");
         }
@@ -273,6 +279,15 @@ namespace SimpleCoop
             peer.Send(writer, method);
         }
 
+        /// <summary>Хост: служебный пакет клиенту по peer.Id.</summary>
+        public void SendToPeerId(int peerId, NetDataWriter writer)
+        {
+            if (peerId < 0 || _netManager == null) return;
+            NetPeer? peer = _netManager.GetPeerById(peerId);
+            if (peer != null)
+                peer.Send(writer, DeliveryMethod.ReliableOrdered);
+        }
+
         /// <summary>Клиент: служебный пакет хосту (HELLO, LOADED) — не зависит от готовности.</summary>
         public void SendControl(NetDataWriter writer)
         {
@@ -333,18 +348,43 @@ namespace SimpleCoop
                             int version = reader.GetInt();
                             string modVersion = reader.GetString(32);
                             string build = reader.GetString(64);
+                            string playerKey = reader.GetString(64);
+                            string playerName = reader.GetString(64);
                             if (!host) break;
 
-                            GameLog.Info($"[Net] HELLO from {peer.EndPoint}: protocol={version} mod={modVersion} game={build}");
+                            GameLog.Info($"[Net] HELLO from {peer.EndPoint} ({playerName}): protocol={version} mod={modVersion} game={build}");
 
                             if (version != ProtocolVersion)
+                            {
                                 Reject(peer, $"Разные версии мода: хост {ProtocolVersion}, клиент {version}");
-                            //else if (build != (DataHandler.strBuild ?? ""))
-                                //Reject(peer, $"Разные версии игры: хост {DataHandler.strBuild}, клиент {build}");
-                            else if (!IsInGame())
+                                break;
+                            }
+                            if (build != (DataHandler.strBuild ?? ""))
+                            {
+                                Reject(peer, $"Разные версии игры: хост {DataHandler.strBuild}, клиент {build}");
+                                break;
+                            }
+                            if (!IsInGame())
+                            {
                                 Reject(peer, "Хост сейчас не в игре");
-                            else
-                                SaveTransfer.Enqueue(peer);
+                                break;
+                            }
+
+                            // Назначить персонажа ДО сохранения — тогда новый член экипажа попадёт в сохранение
+                            string? crewId = PlayerRegistry.AssignOnHost(peer, playerKey, playerName, out string why, out bool firstTime);
+                            if (crewId == null)
+                            {
+                                Reject(peer, why);
+                                break;
+                            }
+
+                            var assign = new NetDataWriter();
+                            assign.Put(PlayerRegistry.MsgAssign);
+                            assign.Put(crewId);
+                            assign.Put(firstTime);   // новый игрок → клиент откроет окно внешности
+                            SendToPeer(peer, assign);
+
+                            SaveTransfer.Enqueue(peer);
                             break;
                         }
 
@@ -364,14 +404,20 @@ namespace SimpleCoop
                         if (host) SaveTransfer.OnLoaded(peer);
                         break;
 
+                    case PlayerRegistry.MsgAssign:
+                        if (client) PlayerRegistry.OnAssign(reader);
+                        break;
+
                     // ---------- клиент → хост (только от загрузившихся) ----------
 
                     case "CMD_MOVE":
                         {
                             string crewId = reader.GetString(128);
+                            string shipId = reader.GetString(64);
                             float x = reader.GetFloat();
                             float y = reader.GetFloat();
-                            if (peerReady) OrderSync.ApplyMoveOrder(crewId, x, y);
+                            if (peerReady && PlayerRegistry.Owns(peer, crewId))
+                                OrderSync.ApplyMoveOrder(crewId, shipId, x, y);
                             break;
                         }
 
@@ -385,7 +431,7 @@ namespace SimpleCoop
                             float y = reader.GetFloat();
 
                             GameLog.Info($"[Net] CMD_ACT {crewId} → {interactionName} on {targetId}");
-                            if (peerReady)
+                            if (peerReady && PlayerRegistry.Owns(peer, crewId))
                                 OrderSync.ApplyActionOrder(crewId, targetId, interactionName, thirdId, x, y);
                             break;
                         }
@@ -393,7 +439,8 @@ namespace SimpleCoop
                     case ActionSync.MsgEffectRequest:
                         {
                             var fx = ActionSync.FxData.Read(reader);
-                            if (peerReady) ActionSync.OnEffectRequest(peer, fx);
+                            if (peerReady && PlayerRegistry.Owns(peer, fx.Us))
+                                ActionSync.OnEffectRequest(peer, fx);
                             break;
                         }
 
@@ -409,6 +456,22 @@ namespace SimpleCoop
                             if (worldReady) ActionSync.OnEffect(fx);
                             break;
                         }
+
+                    // ---------- внешность: клиент → хост → все ----------
+
+                    case AppearanceSync.Msg:
+                        {
+                            var look = AppearanceSync.Look.Read(reader);
+                            if (peerReady && PlayerRegistry.Owns(peer, look.CrewId))
+                                AppearanceSync.ApplyAndRelay(look);   // хост: применить и разослать
+                            else if (worldReady)
+                                AppearanceSync.Apply(look);           // клиент
+                            break;
+                        }
+
+                    case UiSync.MsgRaiseUI:
+                        if (worldReady) UiSync.OnRaiseUI(reader);
+                        break;
 
                     case "SNAP_POS":
                         if (worldReady) PositionSync.ApplySnapshot(reader);
