@@ -124,6 +124,7 @@ namespace SimpleCoop
             SaveTransfer.Update();
             AppearanceSync.Update();
             TimeSync.Update();
+            ShipSync.Update();
 
             // Host: snapshot from Update. Client: interpolation in LateUpdate (on top of game movement).
             if (NetworkManager.Current?.Role == NetworkManager.NetRole.Host)

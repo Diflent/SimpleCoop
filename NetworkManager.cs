@@ -20,7 +20,7 @@ namespace SimpleCoop
         public const int MaxClients = 3;
 
         /// <summary>Увеличивать при КАЖДОМ изменении формата любого пакета.</summary>
-        public const int ProtocolVersion = 6;
+        public const int ProtocolVersion = 7;
 
         public static NetworkManager? Current { get; private set; }
         public NetRole Role { get; private set; } = NetRole.None;
@@ -214,6 +214,7 @@ namespace SimpleCoop
             PositionSync.Clear();
             SaveTransfer.Reset();
             AppearanceSync.Reset();
+            ShipSync.Reset();
 
             GameLog.Info("[Net] Stopped");
         }
@@ -468,6 +469,16 @@ namespace SimpleCoop
                                 AppearanceSync.Apply(look);           // клиент
                             break;
                         }
+
+                    // ---------- корабль игроков: хост → клиенты ----------
+
+                    case ShipSync.MsgEvent:
+                        if (worldReady) ShipSync.OnEvent(reader);
+                        break;
+
+                    case ShipSync.MsgPos:
+                        if (worldReady) ShipSync.OnPos(reader);
+                        break;
 
                     case UiSync.MsgRaiseUI:
                         if (worldReady) UiSync.OnRaiseUI(reader);
